@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MoveNow · 动一下 - 控制台</title>
+  <link rel="stylesheet" href="settings.css">
+</head>
+<body>
+  <div class="window-container">
+    <!-- Header with Mascot Avatar & Status -->
+    <header class="settings-header">
+      <div class="whale-avatar-box">
+        <div class="avatar-whale-icon">🏃</div>
+        <div class="avatar-glow"></div>
+      </div>
+      <div class="header-info">
+        <h1 class="header-title">MoveNow · 动一下</h1>
+        <p class="header-sub">全屏趣味接管 · 防久坐 · 工间活动</p>
+      </div>
+      <div class="status-badge" id="statusBadge">
+        <span class="badge-dot"></span>
+        <span class="badge-text" id="statusText">计时中</span>
+      </div>
+    </header>
+
+    <!-- Countdown & Quick Actions Card -->
+    <div class="timer-preview-card">
+      <div class="timer-box">
+        <div class="timer-label">距离下次全屏活动提醒</div>
+        <div class="timer-digits" id="liveCountdown">25:00</div>
+      </div>
+      <div class="quick-actions">
+        <button class="primary-btn" id="previewNowBtn">
+          <span class="btn-icon">⚡</span>
+          <span>立即活动 (全屏预览)</span>
+        </button>
+        <button class="secondary-btn" id="pauseResumeBtn">
+          <span id="pauseIcon">⏸️</span>
+          <span id="pauseText">暂停计时</span>
+        </button>
+        <button class="icon-action-btn" id="resetBtn" title="重新开始计时">
+          🔄
+        </button>
+      </div>
+    </div>
+
+    <!-- Configuration Options -->
+    <div class="settings-group">
+      <!-- Work Duration Selection -->
+      <div class="config-row">
+        <div class="config-label-group">
+          <label class="config-title">⏱️ 工作时长（每隔多久动一下）</label>
+          <div class="config-desc">计时到达后，大肥鱼将霸屏督促你站起来休息</div>
+        </div>
+        <div class="segmented-control" id="workDurationSelect">
+          <button class="segment-btn" data-val="10">⚡ 10秒(演示)</button>
+          <button class="segment-btn" data-val="1200">20分</button>
+          <button class="segment-btn active" data-val="1800">30分</button>
+          <button class="segment-btn" data-val="2700">45分</button>
+          <button class="segment-btn" data-val="3600">60分</button>
+        </div>
+      </div>
+
+      <!-- Rest Duration Selection -->
+      <div class="config-row">
+        <div class="config-label-group">
+          <label class="config-title">🛋️ 休息时长（大肥鱼擦屏时间）</label>
+          <div class="config-desc">锁屏休息倒计时长度</div>
+        </div>
+        <div class="segmented-control" id="restDurationSelect">
+          <button class="segment-btn" data-val="10">⚡ 10秒(演示)</button>
+          <button class="segment-btn" data-val="20">20秒</button>
+          <button class="segment-btn active" data-val="30">30秒</button>
+          <button class="segment-btn" data-val="60">1分钟</button>
+          <button class="segment-btn" data-val="120">2分钟</button>
+        </div>
+      </div>
+
+      <!-- Strict Mode Toggle -->
+      <div class="config-row switch-row">
+        <div class="config-label-group">
+          <label class="config-title">🛡️ 强制模式 (防秒关)</label>
+          <div class="config-desc">开启后屏保置顶且屏蔽快速ESC，需长按ESC 3秒才可紧急退出</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="strictModeToggle" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <!-- Sound FX Toggle -->
+      <div class="config-row switch-row">
+        <div class="config-label-group">
+          <label class="config-title">🔊 音效与白噪音</label>
+          <div class="config-desc">开启擦玻璃声音、水泡戳破音效与休息结束悦耳提示</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="soundFxToggle" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Shortcut Hint & Footer -->
+    <footer class="settings-footer">
+      <div class="shortcut-tip">
+        <span>💡 全局快捷键: </span>
+        <kbd>⌥</kbd> + <kbd>⌘</kbd> + <kbd>R</kbd>
+        <span>随时全屏活动</span>
+      </div>
+      <div class="version-tip">MoveNow v1.0</div>
+    </footer>
+  </div>
+
+  <script src="settings.js"></script>
+</body>
+</html>

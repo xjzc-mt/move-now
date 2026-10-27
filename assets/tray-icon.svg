@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22" width="22" height="22">
+  <!-- Minimalist Whale for macOS Menu Bar Tray -->
+  <path d="M 3.5,12 C 4.5,8 8,4.5 13,4.5 C 18,4.5 20.5,8 20.5,11.5 C 20.5,15.5 16.5,17.5 12,17.5 C 7,17.5 3.5,15 3.5,12 Z" fill="#000000"/>
+  <!-- Tail -->
+  <path d="M 4,12 C 1.5,9.5 0.5,10.5 1,12.5 C 1.5,13.2 3,13 4,13.5 C 3,14.5 1.5,14.5 1,15.5 C 0.5,16.8 2,17 4,14.5 Z" fill="#000000"/>
+  <!-- Blowhole water drop -->
+  <circle cx="11" cy="2.5" r="1.2" fill="#000000"/>
+  <!-- Eye cut-out -->
+  <circle cx="16" cy="10" r="1" fill="#ffffff"/>
+</svg>

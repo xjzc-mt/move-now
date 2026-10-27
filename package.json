@@ -1,0 +1,16 @@
+{
+  "name": "move-now",
+  "productName": "MoveNow",
+  "version": "1.0.0",
+  "description": "MoveNow - 全屏趣味防久坐与工间活动提醒助手",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": ["screensaver", "movenow", "break-reminder", "health", "ergonomics"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^40.8.0"
+  }
+}

@@ -1,0 +1,134 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 320" width="100%" height="100%">
+  <defs>
+    <!-- Whale Body Gradient (DeepSeek Blue) -->
+    <linearGradient id="whaleBodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4c8aff"/>
+      <stop offset="45%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+
+    <!-- Belly Gradient -->
+    <linearGradient id="whaleBellyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e0edff"/>
+    </linearGradient>
+
+    <!-- Wiper Handle Gradient -->
+    <linearGradient id="wiperHandle" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+
+    <!-- Wiper Blade Gradient -->
+    <linearGradient id="wiperBlade" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="50%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+
+    <!-- Shadow filter -->
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#1e3a8a" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <g class="whale-character" filter="url(#softShadow)">
+    <!-- Water Spout / Blowhole fountain on head -->
+    <g class="spout-group">
+      <path d="M 175,75 C 175,40 155,25 140,30 C 158,45 165,65 170,75 Z" fill="#93c5fd" opacity="0.85"/>
+      <path d="M 180,75 C 182,35 195,15 210,20 C 198,35 188,60 185,75 Z" fill="#60a5fa" opacity="0.9"/>
+      <path d="M 178,75 C 178,45 178,20 182,10 C 185,25 183,55 181,75 Z" fill="#bfdbfe" opacity="0.95"/>
+      <circle cx="138" cy="28" r="5" fill="#93c5fd"/>
+      <circle cx="212" cy="18" r="6" fill="#60a5fa"/>
+      <circle cx="182" cy="8" r="4.5" fill="#dbeafe"/>
+    </g>
+
+    <!-- Tail Fluke (undulating) -->
+    <g class="tail-group">
+      <!-- Tail fin left & right -->
+      <path d="M 55,160 C 25,125 5,135 12,165 C 22,175 45,170 65,175 C 45,185 25,185 15,200 C 10,225 35,225 65,190 Z" 
+            fill="url(#whaleBodyGrad)"/>
+    </g>
+
+    <!-- Main Chubby Whale Body -->
+    <!-- Super smooth, cute chubby beluga/whale silhouette -->
+    <path class="body-path" d="M 60,180
+             C 75,130 115,75 190,75
+             C 275,75 345,115 355,175
+             C 365,235 285,270 195,268
+             C 125,266 70,230 60,180 Z" 
+          fill="url(#whaleBodyGrad)"/>
+
+    <!-- Chubby White Belly -->
+    <path class="belly-path" d="M 125,245
+             C 160,265 240,268 295,245
+             C 335,225 348,185 345,170
+             C 320,185 250,205 185,200
+             C 135,196 100,215 125,245 Z" 
+          fill="url(#whaleBellyGrad)"/>
+
+    <!-- Left Fin (waving in background or side) -->
+    <path d="M 130,205 C 105,215 90,235 105,248 C 120,255 140,235 145,215 Z" fill="#1d4ed8" opacity="0.8"/>
+
+    <!-- DeepSeek Cute Face Details -->
+    <!-- Eyes: Sparkly Happy Eyes or Smiling Curved Eyes -->
+    <g class="eyes-group">
+      <!-- Left Eye -->
+      <circle cx="270" cy="140" r="11" fill="#0f172a"/>
+      <circle cx="267" cy="136" r="4" fill="#ffffff"/>
+      <circle cx="274" cy="144" r="2" fill="#ffffff"/>
+
+      <!-- Right Eye -->
+      <circle cx="325" cy="142" r="11" fill="#0f172a"/>
+      <circle cx="322" cy="138" r="4" fill="#ffffff"/>
+      <circle cx="329" cy="146" r="2" fill="#ffffff"/>
+    </g>
+
+    <!-- Pink Blush Cheeks -->
+    <ellipse cx="255" cy="160" rx="14" ry="9" fill="#ff6b8b" opacity="0.6"/>
+    <ellipse cx="340" cy="162" rx="14" ry="9" fill="#ff6b8b" opacity="0.6"/>
+
+    <!-- Cute Smiling Mouth -->
+    <path d="M 292,156 C 298,168 310,168 316,156" fill="none" stroke="#0f172a" stroke-width="3.5" stroke-linecap="round"/>
+    <!-- Cute open smile tongue -->
+    <path d="M 295,158 C 300,168 308,168 313,158 Z" fill="#ff8da1"/>
+
+    <!-- Sweatband / Towel on Forehead (Gym/Rest Mode) -->
+    <g class="headband-group">
+      <path d="M 230,96 C 265,90 310,98 340,118" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round"/>
+      <path d="M 230,96 C 265,90 310,98 340,118" fill="none" stroke="#ef4444" stroke-width="4" stroke-linecap="round"/>
+      <!-- DeepSeek little star / logo badge on headband -->
+      <circle cx="280" cy="98" r="7" fill="#3b82f6"/>
+      <circle cx="280" cy="98" r="4" fill="#ffffff"/>
+    </g>
+
+    <!-- Right Fin holding the Wiper / Squeegee -->
+    <g class="flipper-wiper-group" transform="translate(230, 185) rotate(-15)">
+      <!-- Squeegee Handle -->
+      <rect x="25" y="-35" width="8" height="50" rx="4" fill="url(#wiperHandle)"/>
+      <!-- Squeegee Crossbar -->
+      <rect x="5" y="-45" width="48" height="12" rx="4" fill="url(#wiperBlade)"/>
+      <!-- Rubber blade / water drops on blade -->
+      <rect x="3" y="-48" width="52" height="4" rx="2" fill="#38bdf8"/>
+      <circle cx="15" cy="-52" r="3" fill="#bae6fd"/>
+      <circle cx="42" cy="-50" r="4" fill="#e0f2fe"/>
+      <circle cx="28" cy="-55" r="2.5" fill="#ffffff"/>
+
+      <!-- Whale's Front Right Fin wrapping around the handle -->
+      <path d="M 0,0 C 15,-10 35,-5 38,10 C 35,25 15,22 0,10 Z" fill="#3b82f6"/>
+      <path d="M 12,-2 C 22,-8 34,-5 36,6" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round"/>
+    </g>
+
+    <!-- Soap Bubbles clinging to whale -->
+    <g class="bubbles-foam">
+      <circle cx="215" cy="235" r="9" fill="#ffffff" opacity="0.75"/>
+      <circle cx="212" cy="232" r="3" fill="#ffffff"/>
+
+      <circle cx="228" cy="246" r="6" fill="#e0f2fe" opacity="0.8"/>
+      <circle cx="204" cy="248" r="5" fill="#bae6fd" opacity="0.7"/>
+
+      <circle cx="348" cy="130" r="7" fill="#ffffff" opacity="0.6"/>
+      <circle cx="346" cy="128" r="2" fill="#ffffff"/>
+    </g>
+  </g>
+</svg>

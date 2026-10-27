@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MoveNow · 动一下</title>
+  <link rel="stylesheet" href="overlay.css">
+</head>
+<body>
+  <!-- Deep ocean ambient background -->
+  <div class="ocean-background">
+    <div class="sun-rays"></div>
+    <div class="caustics-layer"></div>
+    <div id="ambient-bubbles" class="ambient-bubbles"></div>
+  </div>
+
+  <!-- The Frosted Glass Canvas that the whale will wipe off -->
+  <canvas id="wipeCanvas"></canvas>
+
+  <!-- Animated Chubby Whale Actor -->
+  <div id="whaleActor" class="whale-actor">
+    <div class="speech-bubble" id="speechBubble">
+      <span class="bubble-text">哼哧哼哧！大肥鱼来没收屏幕啦~</span>
+      <span class="bubble-tail"></span>
+    </div>
+    <div class="whale-svg-wrapper" id="whaleSvgWrapper">
+      <!-- Embedded DeepSeek Chubby Whale SVG -->
+      <svg id="whaleSvg" viewBox="0 0 400 320" width="100%" height="100%">
+        <defs>
+          <linearGradient id="whaleBodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#4d88ff"/>
+            <stop offset="45%" stop-color="#2563eb"/>
+            <stop offset="100%" stop-color="#1d4ed8"/>
+          </linearGradient>
+          <linearGradient id="whaleBellyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#ffffff"/>
+            <stop offset="100%" stop-color="#e0edff"/>
+          </linearGradient>
+          <linearGradient id="wiperHandle" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#10b981"/>
+            <stop offset="100%" stop-color="#059669"/>
+          </linearGradient>
+          <linearGradient id="wiperBlade" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#fbbf24"/>
+            <stop offset="50%" stop-color="#f59e0b"/>
+            <stop offset="100%" stop-color="#d97706"/>
+          </linearGradient>
+          <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#0f172a" flood-opacity="0.35"/>
+          </filter>
+        </defs>
+
+        <g class="whale-character" filter="url(#softShadow)">
+          <!-- Water Spout on head -->
+          <g class="spout-group">
+            <path d="M 175,75 C 175,40 155,25 140,30 C 158,45 165,65 170,75 Z" fill="#93c5fd" opacity="0.85"/>
+            <path d="M 180,75 C 182,35 195,15 210,20 C 198,35 188,60 185,75 Z" fill="#60a5fa" opacity="0.9"/>
+            <path d="M 178,75 C 178,45 178,20 182,10 C 185,25 183,55 181,75 Z" fill="#bfdbfe" opacity="0.95"/>
+            <circle cx="138" cy="28" r="5" fill="#93c5fd"/>
+            <circle cx="212" cy="18" r="6" fill="#60a5fa"/>
+            <circle cx="182" cy="8" r="4.5" fill="#dbeafe"/>
+          </g>
+
+          <!-- Undulating Tail -->
+          <g class="tail-fin">
+            <path d="M 55,160 C 25,125 5,135 12,165 C 22,175 45,170 65,175 C 45,185 25,185 15,200 C 10,225 35,225 65,190 Z" 
+                  fill="url(#whaleBodyGrad)"/>
+          </g>
+
+          <!-- Main Chubby Whale Body -->
+          <path class="whale-main-body" d="M 60,180
+                   C 75,130 115,75 190,75
+                   C 275,75 345,115 355,175
+                   C 365,235 285,270 195,268
+                   C 125,266 70,230 60,180 Z" 
+                fill="url(#whaleBodyGrad)"/>
+
+          <!-- White Belly -->
+          <path d="M 125,245
+                   C 160,265 240,268 295,245
+                   C 335,225 348,185 345,170
+                   C 320,185 250,205 185,200
+                   C 135,196 100,215 125,245 Z" 
+                fill="url(#whaleBellyGrad)"/>
+
+          <!-- Left Fin -->
+          <path d="M 130,205 C 105,215 90,235 105,248 C 120,255 140,235 145,215 Z" fill="#1d4ed8" opacity="0.8"/>
+
+          <!-- Sparkly smiling Eyes -->
+          <g class="eyes-group">
+            <circle cx="270" cy="140" r="11" fill="#0f172a"/>
+            <circle cx="267" cy="136" r="4" fill="#ffffff"/>
+            <circle cx="274" cy="144" r="2" fill="#ffffff"/>
+
+            <circle cx="325" cy="142" r="11" fill="#0f172a"/>
+            <circle cx="322" cy="138" r="4" fill="#ffffff"/>
+            <circle cx="329" cy="146" r="2" fill="#ffffff"/>
+          </g>
+
+          <!-- Blush Cheeks -->
+          <ellipse cx="255" cy="160" rx="14" ry="9" fill="#ff6b8b" opacity="0.6"/>
+          <ellipse cx="340" cy="162" rx="14" ry="9" fill="#ff6b8b" opacity="0.6"/>
+
+          <!-- Cute Smile -->
+          <path d="M 292,156 C 298,168 310,168 316,156" fill="none" stroke="#0f172a" stroke-width="3.5" stroke-linecap="round"/>
+          <path d="M 295,158 C 300,168 308,168 313,158 Z" fill="#ff8da1"/>
+
+          <!-- Gym Headband -->
+          <g class="headband-group">
+            <path d="M 230,96 C 265,90 310,98 340,118" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round"/>
+            <path d="M 230,96 C 265,90 310,98 340,118" fill="none" stroke="#ef4444" stroke-width="4" stroke-linecap="round"/>
+            <circle cx="280" cy="98" r="7" fill="#3b82f6"/>
+            <circle cx="280" cy="98" r="4" fill="#ffffff"/>
+          </g>
+
+          <!-- Right Flipper holding Squeegee Wiper -->
+          <g class="wiper-arm" id="wiperArm" transform="translate(230, 185) rotate(-15)">
+            <rect x="25" y="-35" width="8" height="50" rx="4" fill="url(#wiperHandle)"/>
+            <rect x="5" y="-45" width="48" height="12" rx="4" fill="url(#wiperBlade)"/>
+            <rect x="3" y="-48" width="52" height="4" rx="2" fill="#38bdf8"/>
+            <circle cx="15" cy="-52" r="3" fill="#bae6fd"/>
+            <circle cx="42" cy="-50" r="4" fill="#e0f2fe"/>
+            <path d="M 0,0 C 15,-10 35,-5 38,10 C 35,25 15,22 0,10 Z" fill="#3b82f6"/>
+          </g>
+
+          <!-- Soapy bubbles -->
+          <g class="soap-bubbles">
+            <circle cx="215" cy="235" r="9" fill="#ffffff" opacity="0.75"/>
+            <circle cx="212" cy="232" r="3" fill="#ffffff"/>
+            <circle cx="228" cy="246" r="6" fill="#e0f2fe" opacity="0.8"/>
+            <circle cx="348" cy="130" r="7" fill="#ffffff" opacity="0.6"/>
+          </g>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Interactive / Floating Content Overlay (Shown after/during wipe) -->
+  <main class="content-container" id="contentContainer">
+    <!-- Header / Brand -->
+    <header class="app-header">
+      <div class="logo-pill">
+        <span class="logo-dot"></span>
+        <span class="brand-title">MoveNow · 工间活动协议</span>
+      </div>
+      <div class="sound-toggle-btn" id="soundToggleBtn" title="切换声音">
+        <span id="soundIcon">🔊</span>
+      </div>
+    </header>
+
+    <!-- Center Stage: Giant Countdown & Exercise Guide -->
+    <section class="center-stage">
+      <!-- Circular Countdown Timer -->
+      <div class="timer-card">
+        <div class="countdown-circle-container">
+          <svg class="progress-ring" width="220" height="220">
+            <circle class="progress-ring-bg" stroke="rgba(255,255,255,0.12)" stroke-width="12" fill="transparent" r="95" cx="110" cy="110"/>
+            <circle class="progress-ring-fill" id="progressRingFill" stroke="url(#timerGrad)" stroke-width="12" stroke-linecap="round" fill="transparent" r="95" cx="110" cy="110"/>
+            <defs>
+              <linearGradient id="timerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#38bdf8"/>
+                <stop offset="50%" stop-color="#3b82f6"/>
+                <stop offset="100%" stop-color="#818cf8"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="countdown-text-box">
+            <div class="time-number" id="countdownNumber">00:30</div>
+            <div class="time-label">倒计时休息</div>
+          </div>
+        </div>
+
+        <!-- Exercise Tip -->
+        <div class="stretch-tip-box" id="stretchTipBox">
+          <div class="tip-icon" id="tipIcon">🧘‍♂️</div>
+          <div class="tip-content">
+            <h3 class="tip-title" id="tipTitle">眺望远方 & 伸展颈椎</h3>
+            <p class="tip-desc" id="tipDesc">站起身来，把视线移向窗外6米远处，让眼睛睫状肌充分放松~</p>
+          </div>
+        </div>
+
+        <!-- Breathing guide pulse -->
+        <div class="breathing-guide">
+          <div class="breathe-circle"></div>
+          <span class="breathe-text" id="breatheText">深吸气 · 慢慢吐气</span>
+        </div>
+      </div>
+
+      <!-- DeepSeek R1 Thinking Process Spoof Accordion -->
+      <div class="r1-think-card" id="r1ThinkCard">
+        <div class="r1-think-header" id="r1ThinkHeader">
+          <div class="r1-title-group">
+            <span class="r1-sparkle">✨</span>
+            <span class="r1-label">DeepSeek-R1 深度思考过程</span>
+            <span class="r1-time-tag">耗时 0.18 秒</span>
+          </div>
+          <span class="r1-toggle-arrow" id="r1ToggleArrow">▲</span>
+        </div>
+        <div class="r1-think-body" id="r1ThinkBody">
+          <pre class="r1-code-block"><code id="r1ThinkContent">&lt;think&gt;
+[00:00:01] 遥测数据回传：检测到用户已持续面对屏幕高强度输出。
+[00:00:02] 分析骨骼应力：颈椎曲度前倾，肩胛提肌充血，腰椎承受久坐负荷。
+[00:00:03] 知识库检索：人体不是由钛合金构成的，需要定期水冷与机械活动。
+[00:00:04] 策略判定：呼叫大肥鱼，启动屏幕清洁兼强制休息协议！
+[00:00:05] 行动项：离开座椅，旋转双肩，喝温水200ml。
+&lt;/think&gt;
+大肥鱼已为您拦截一切烦躁与BUG，请尽情深呼吸！</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bottom Actions / Enforceability & Safety Guard -->
+    <footer class="app-footer">
+      <div class="interactive-hint">
+        💡 提示：点击屏幕上的漂浮气泡可戳破减压 🫧
+      </div>
+
+      <!-- Emergency bypass button with hold-down ring -->
+      <div class="emergency-wrapper">
+        <button class="emergency-btn" id="emergencyBtn">
+          <svg class="emergency-ring" width="36" height="36">
+            <circle class="ring-bg" stroke="rgba(255,255,255,0.2)" stroke-width="3" fill="transparent" r="15" cx="18" cy="18"/>
+            <circle class="ring-fill" id="emergencyRingFill" stroke="#ef4444" stroke-width="3" stroke-linecap="round" fill="transparent" r="15" cx="18" cy="18"/>
+          </svg>
+          <span class="emergency-label">长按 ESC 3秒 紧急打断</span>
+        </button>
+      </div>
+    </footer>
+  </main>
+
+  <!-- Toast Notification (when user tries to casually close) -->
+  <div class="whale-toast" id="whaleToast">
+    <span class="toast-whale-icon">🐋</span>
+    <span class="toast-message" id="toastMessage">大肥鱼用肚皮顶住：才休息几秒钟呢，快去活动下！(紧急请长按ESC 3秒)</span>
+  </div>
+
+  <!-- Celebratory Fireworks / Finished screen -->
+  <div class="finish-overlay" id="finishOverlay">
+    <div class="finish-card">
+      <div class="finish-emoji">🎉 🐋 ✨</div>
+      <h2 class="finish-title">满血复活！</h2>
+      <p class="finish-subtitle">大肥鱼已为您擦亮屏幕，精力值充沛，继续加油冲鸭！</p>
+    </div>
+  </div>
+
+  <script src="overlay.js"></script>
+</body>
+</html>

@@ -1,0 +1,200 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  user-select: none;
+}
+
+body {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  background-color: #070c18;
+  color: #f1f5f9;
+}
+
+.screensaver-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at center, #0f1d3a 0%, #060a14 100%);
+}
+
+/* Fog mist overlay before wipe */
+.fog-layer {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 1;
+  pointer-events: none;
+  animation: fogClear 2.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fogClear {
+  0% {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+  30% {
+    clip-path: inset(0 0 0 0);
+  }
+  100% {
+    clip-path: inset(0 0 0 100%);
+    opacity: 0;
+  }
+}
+
+/* The Animated Chubby Whale with Squeegee */
+.whale-actor {
+  position: absolute;
+  top: 40%;
+  left: -320px;
+  width: 240px;
+  height: 190px;
+  z-index: 2;
+  pointer-events: none;
+  animation: whaleSwim 3.2s cubic-bezier(0.2, 0.8, 0.25, 1) forwards;
+  filter: drop-shadow(0 12px 28px rgba(37, 99, 235, 0.4));
+}
+
+.whale-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+@keyframes whaleSwim {
+  0% {
+    transform: translate3d(0, 40px, 0) rotate(-6deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  50% {
+    transform: translate3d(calc(50vw + 60px), -20px, 0) rotate(2deg);
+  }
+  100% {
+    transform: translate3d(calc(100vw + 380px), 10px, 0) rotate(-2deg);
+    opacity: 0;
+  }
+}
+
+/* Central Content */
+.content-box {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  animation: fadeIn 0.8s ease-out 0.6s both;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Countdown Ring */
+.countdown-ring-wrap {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin-bottom: 28px;
+}
+
+.progress-ring {
+  transform: rotate(-90deg);
+}
+
+.ring-bg {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 6;
+}
+
+.ring-progress {
+  fill: none;
+  stroke: #3b82f6;
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-dasharray: 326.72; /* 2 * PI * 52 */
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 0.95s linear;
+}
+
+.countdown-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 38px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.5px;
+  color: #ffffff;
+}
+
+/* Typography */
+.headline {
+  font-size: 34px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  margin-bottom: 10px;
+  color: #ffffff;
+}
+
+.subtext {
+  font-size: 16px;
+  color: #94a3b8;
+  font-weight: 400;
+  margin-bottom: 36px;
+}
+
+/* Skip / Dismiss Button */
+.skip-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.skip-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.24);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.skip-btn kbd {
+  background: rgba(255, 255, 255, 0.12);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: inherit;
+  font-weight: 600;
+  color: #94a3b8;
+}

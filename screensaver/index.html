@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MoveNow</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="screensaver-container">
+    <!-- Fog Overlay Layer -->
+    <div class="fog-layer" id="fogLayer"></div>
+
+    <!-- Wiped Clean Trail (Reveals clean crystal backdrop) -->
+    <div class="wipe-trail" id="wipeTrail"></div>
+
+    <!-- The Chubby Whale Squeegee Swimmer -->
+    <div class="whale-actor" id="whaleActor">
+      <img src="../assets/whale.svg" alt="DeepSeek Whale" class="whale-img">
+    </div>
+
+    <!-- Minimal Central Card -->
+    <main class="content-box">
+      <div class="countdown-ring-wrap">
+        <svg class="progress-ring" width="120" height="120">
+          <circle class="ring-bg" cx="60" cy="60" r="52"></circle>
+          <circle class="ring-progress" id="ringProgress" cx="60" cy="60" r="52"></circle>
+        </svg>
+        <div class="countdown-text" id="countdownNumber">30</div>
+      </div>
+
+      <h1 class="headline">动一下吧</h1>
+      <p class="subtext">离开椅子，喝口水，眺望远方</p>
+
+      <button class="skip-btn" id="skipBtn">
+        <span>跳过休息</span>
+        <kbd>ESC</kbd>
+      </button>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

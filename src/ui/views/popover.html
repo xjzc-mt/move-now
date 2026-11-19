@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MoveNow</title>
+  <link rel="stylesheet" href="../themes/themes.css" />
+  <link rel="stylesheet" href="popover.css" />
+</head>
+<body>
+  <main class="pop-shell" id="popShell">
+    <header class="pop-header">
+      <div class="pop-brand">
+        <span class="pop-title">MoveNow</span>
+        <span class="pop-badge" id="statusBadge"></span>
+      </div>
+      <button class="icon-btn" id="openPrefsBtn" title="偏好设置" aria-label="偏好设置">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3.2"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l-.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
+    </header>
+
+    <!-- 1. 状态共鸣卡片 + 剩余节奏与轻量微调 -->
+    <section class="resonance-card">
+      <div class="resonance-main">
+        <div class="resonance-stage" id="popoverStage"></div>
+        <div class="resonance-copy">
+          <p class="resonance-status" id="statusLine">正在安静陪伴，不打扰你的专注</p>
+          <p class="resonance-summary" id="summaryLine">今天还没起身放松过</p>
+        </div>
+      </div>
+
+      <div class="rhythm-strip">
+        <div class="rhythm-progress-track">
+          <div class="rhythm-progress-fill" id="rhythmProgressFill"></div>
+        </div>
+        <div class="rhythm-row">
+          <span class="rhythm-label" id="rhythmLabel">约 45 分钟后放松</span>
+          <div class="rhythm-actions" id="rhythmActions">
+            <button class="micro-pill" id="extendCycleBtn" title="把本轮休息顺延 15 分钟">+15 分钟</button>
+            <button class="micro-pill" id="resetCycleBtn" title="重新起算本轮工作时长">重算</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. 立即放松一下 -->
+    <button class="primary-action" id="restNowBtn">
+      <span>立即放松一下</span>
+      <kbd class="shortcut-pill">⌥⌘R</kbd>
+    </button>
+
+    <!-- 3. 专注 / 汇报免打扰（开启后展开时长档位） -->
+    <section class="dnd-card">
+      <button class="dnd-row" id="dndToggleBtn" role="switch" aria-checked="false">
+        <div class="dnd-text">
+          <span class="dnd-title">专注 / 汇报免打扰</span>
+          <span class="dnd-sub" id="dndSub">暂停全部提醒</span>
+        </div>
+        <span class="switch-track" aria-hidden="true">
+          <span class="switch-thumb"></span>
+        </span>
+      </button>
+      <div class="dnd-presets" id="dndPresets" hidden>
+        <button class="dnd-pill" data-dnd-preset="30">30 分钟</button>
+        <button class="dnd-pill" data-dnd-preset="60">1 小时</button>
+        <button class="dnd-pill" data-dnd-preset="120">2 小时</button>
+        <button class="dnd-pill" data-dnd-preset="today">今天</button>
+      </div>
+    </section>
+
+    <!-- 4. 黄金三主题快捷切换胶囊（选自然视窗时可顺手选物理质感） -->
+    <section class="theme-switcher" aria-label="主题切换">
+      <div class="theme-capsules" role="radiogroup">
+        <button class="theme-pill" data-theme-choice="geometric" role="radio">几何生灵</button>
+        <button class="theme-pill" data-theme-choice="sketch" role="radio">简笔日常</button>
+        <button class="theme-pill" data-theme-choice="nature_window" role="radio">自然视窗</button>
+      </div>
+      <div class="nature-sub-bar" id="natureSubBar" hidden>
+        <button class="nature-pill" data-nature-style="bokeh">失焦</button>
+        <button class="nature-pill" data-nature-style="mist">起雾</button>
+        <button class="nature-pill" data-nature-style="frost">凝霜</button>
+        <button class="nature-pill" data-nature-style="auto">轮换</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="../core/actions.js"></script>
+  <script src="../core/state-machine.js"></script>
+  <script src="../core/bridge.js"></script>
+  <script src="../themes/geometric.js"></script>
+  <script src="../themes/sketch.js"></script>
+  <script src="../themes/nature-window.js"></script>
+  <script src="../themes/theme-stage.js"></script>
+  <script src="popover.js"></script>
+</body>
+</html>

@@ -1,0 +1,390 @@
+html,
+body {
+  width: 340px;
+  overflow: hidden;
+}
+
+.pop-shell {
+  padding: 15px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  background: var(--panel-bg);
+  transition: background 0.35s var(--ease-spring), color 0.35s var(--ease-spring);
+}
+
+.pop-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2px;
+}
+
+.pop-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pop-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.pop-badge {
+  font-size: 11px;
+  color: var(--ink-muted);
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  display: none;
+}
+
+.pop-badge.visible {
+  display: inline-block;
+}
+
+.icon-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-muted);
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.icon-btn:hover {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+/* 1. Resonance Card + Rhythm Strip */
+.resonance-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px 11px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+}
+
+.resonance-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.resonance-stage {
+  width: 66px;
+  height: 60px;
+  flex-shrink: 0;
+}
+
+.resonance-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.resonance-status {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.resonance-summary {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--ink-muted);
+}
+
+.rhythm-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding-top: 8px;
+  border-top: 1px solid var(--surface-border);
+}
+
+.rhythm-progress-track {
+  width: 100%;
+  height: 2.5px;
+  border-radius: 999px;
+  background: var(--surface-border);
+  overflow: hidden;
+}
+
+.rhythm-progress-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: var(--accent);
+  opacity: 0.78;
+  transition: width 0.5s var(--ease-spring);
+}
+
+.rhythm-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.rhythm-label {
+  font-size: 11.5px;
+  color: var(--ink-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rhythm-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.rhythm-actions[hidden] {
+  display: none;
+}
+
+.micro-pill {
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-muted);
+  background: var(--panel-bg);
+  border: 1px solid var(--surface-border);
+  transition: background 0.18s ease, color 0.18s ease, transform 0.16s var(--ease-spring);
+}
+
+.micro-pill:hover {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+.micro-pill:active {
+  transform: scale(0.96);
+}
+
+/* 2. Rest Now Button */
+.primary-action {
+  width: 100%;
+  height: 41px;
+  padding: 0 14px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--accent-soft);
+  border: 1px solid transparent;
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 500;
+  transition: transform 0.2s var(--ease-spring), background 0.2s ease;
+}
+
+.primary-action:hover {
+  background: var(--surface-hover);
+  border-color: var(--surface-border);
+}
+
+.primary-action:active {
+  transform: scale(0.985);
+}
+
+.shortcut-pill {
+  font-family: inherit;
+  font-size: 11px;
+  color: var(--ink-muted);
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+}
+
+/* 3. DND Card & Duration Presets */
+.dnd-card {
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  overflow: hidden;
+}
+
+.dnd-row {
+  width: 100%;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  text-align: left;
+  transition: background 0.2s ease;
+}
+
+.dnd-row:hover {
+  background: var(--surface-hover);
+}
+
+.dnd-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dnd-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.dnd-sub {
+  font-size: 11.5px;
+  color: var(--ink-muted);
+}
+
+.switch-track {
+  width: 36px;
+  height: 20px;
+  border-radius: 999px;
+  background: rgba(120, 125, 130, 0.28);
+  padding: 2px;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  transition: background 0.25s ease;
+}
+
+.switch-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+  transition: transform 0.25s var(--ease-spring);
+}
+
+.dnd-row[aria-checked="true"] .switch-track {
+  background: var(--accent);
+}
+
+.dnd-row[aria-checked="true"] .switch-thumb {
+  transform: translateX(16px);
+}
+
+.dnd-presets {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 0 10px 10px;
+}
+
+.dnd-presets[hidden] {
+  display: none;
+}
+
+.dnd-pill {
+  height: 25px;
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-muted);
+  background: var(--panel-bg);
+  border: 1px solid var(--surface-border);
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+
+.dnd-pill:hover {
+  color: var(--ink);
+  background: var(--surface-hover);
+}
+
+.dnd-pill.active {
+  color: var(--ink);
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+/* 4. Theme Capsules */
+.theme-switcher {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.theme-capsules {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+}
+
+.theme-pill {
+  height: 30px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-muted);
+  transition: background 0.22s var(--ease-spring), color 0.22s ease, box-shadow 0.22s ease;
+}
+
+.theme-pill:hover {
+  color: var(--ink);
+}
+
+.theme-pill.active {
+  background: var(--surface-hover);
+  color: var(--ink);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.nature-sub-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+}
+
+.nature-sub-bar[hidden] {
+  display: none;
+}
+
+.nature-pill {
+  height: 24px;
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-muted);
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.nature-pill:hover {
+  color: var(--ink);
+}
+
+.nature-pill.active {
+  background: var(--accent-soft);
+  color: var(--ink);
+}

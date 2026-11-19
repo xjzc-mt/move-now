@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>偏好设置 · MoveNow</title>
+  <link rel="stylesheet" href="../themes/themes.css" />
+  <link rel="stylesheet" href="preferences.css" />
+</head>
+<body>
+  <main class="prefs-shell">
+    <header class="prefs-header">
+      <div>
+        <h1>偏好设置</h1>
+        <p>把节奏调到最顺手的状态，平时不必再来这里。</p>
+      </div>
+      <button class="preview-btn" id="previewBtn">15 秒快速预览</button>
+    </header>
+
+    <div class="prefs-scroll">
+      <!-- Rhythm Presets -->
+      <section class="prefs-section">
+        <h2 class="section-title">休息节奏</h2>
+        <div class="radio-stack" id="rhythmGroup">
+          <button class="radio-row" data-rhythm="golden">
+            <span class="radio-dot"></span>
+            <div class="radio-text">
+              <span class="radio-title">黄金单节奏（默认）</span>
+              <span class="radio-desc">每工作 45 分钟，起身放松 45 秒</span>
+            </div>
+          </button>
+          <button class="radio-row" data-rhythm="dual">
+            <span class="radio-dot"></span>
+            <div class="radio-text">
+              <span class="radio-title">护眼 + 起身双节奏</span>
+              <span class="radio-desc">每 20 分钟角落轻提醒远眺 15 秒 + 每 60 分钟正式起身 2 分钟</span>
+            </div>
+          </button>
+          <button class="radio-row" data-rhythm="custom">
+            <span class="radio-dot"></span>
+            <div class="radio-text">
+              <span class="radio-title">自定义时长</span>
+              <span class="radio-desc">按自己的工作段落自由设定</span>
+            </div>
+          </button>
+        </div>
+
+        <div class="custom-duration-box" id="customDurationBox">
+          <label class="num-field">
+            <span>工作间隔（分钟）</span>
+            <input type="number" id="customWorkInput" min="1" max="180" step="1" />
+          </label>
+          <label class="num-field">
+            <span>休息时长（秒）</span>
+            <input type="number" id="customBreakInput" min="10" max="600" step="5" />
+          </label>
+        </div>
+      </section>
+
+      <!-- Reminder Mode -->
+      <section class="prefs-section">
+        <h2 class="section-title">提醒挡位</h2>
+        <div class="segmented-three" id="modeGroup">
+          <button class="seg-item" data-mode="fullscreen_preview">
+            <span class="seg-title" id="previewModeTitle">15s 预告 + 全屏</span>
+            <span class="seg-sub">默认柔和介入</span>
+          </button>
+          <button class="seg-item" data-mode="corner_card">
+            <span class="seg-title">角落轻陪伴</span>
+            <span class="seg-sub">浮在角落不遮挡</span>
+          </button>
+          <button class="seg-item" data-mode="edge_glow">
+            <span class="seg-title">边缘光影氛围</span>
+            <span class="seg-sub">屏边柔光渐进</span>
+          </button>
+        </div>
+        <div class="inline-option-row" id="preAlertRow">
+          <span class="inline-option-label">全屏前收尾预告时长</span>
+          <div class="inline-pills" id="preAlertGroup">
+            <button class="inline-pill" data-pre-alert="10">10 秒</button>
+            <button class="inline-pill" data-pre-alert="15">15 秒</button>
+            <button class="inline-pill" data-pre-alert="30">30 秒</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Exit Strictness -->
+      <section class="prefs-section">
+        <h2 class="section-title">跳过本次休息的严格度</h2>
+        <div class="segmented-three" id="strictnessGroup">
+          <button class="seg-item" data-strictness="relaxed">
+            <span class="seg-title">宽松</span>
+            <span class="seg-sub">单按 ESC 即退</span>
+          </button>
+          <button class="seg-item" data-strictness="standard">
+            <span class="seg-title">默认 · 防误触</span>
+            <span class="seg-sub">双击 ESC 跳过</span>
+          </button>
+          <button class="seg-item" data-strictness="strict">
+            <span class="seg-title">严格</span>
+            <span class="seg-sub">锁定不可跳过</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Privacy & Experience Details -->
+      <section class="prefs-section">
+        <h2 class="section-title">隐私与体验细节</h2>
+        <div class="toggle-list">
+          <button class="toggle-row" data-toggle="autoSealOnAway" role="switch" aria-checked="true">
+            <div class="toggle-text">
+              <span class="toggle-title">离座自动封存防窥</span>
+              <span class="toggle-desc">休息结束若未回座，自然转入当前主题专属封存态遮蔽文字；轻触键鼠 0.8 秒消散</span>
+            </div>
+            <span class="switch-track"><span class="switch-thumb"></span></span>
+          </button>
+
+          <button class="toggle-row" data-toggle="preventSleepDuringSeal" role="switch" aria-checked="false">
+            <div class="toggle-text">
+              <span class="toggle-title">封存期间阻止系统自动休眠</span>
+              <span class="toggle-desc">默认关闭不干涉系统休眠；开启后可在离座封存期间保活后台任务（最长 2 小时自动释放）</span>
+            </div>
+            <span class="switch-track"><span class="switch-thumb"></span></span>
+          </button>
+
+          <button class="toggle-row" data-toggle="handsOffToCount" role="switch" aria-checked="true">
+            <div class="toggle-text">
+              <span class="toggle-title">松开键鼠才走表</span>
+              <span class="toggle-desc">休息期间仍在连续打字或大幅移鼠标时，轻停进度等待松手</span>
+            </div>
+            <span class="switch-track"><span class="switch-thumb"></span></span>
+          </button>
+
+          <button class="toggle-row" data-toggle="soundEnabled" role="switch" aria-checked="false">
+            <div class="toggle-text">
+              <span class="toggle-title">休息结束轻柔提示音</span>
+              <span class="toggle-desc">默认静音，适合闭眼远眺时听声回到屏幕</span>
+            </div>
+            <span class="switch-track"><span class="switch-thumb"></span></span>
+          </button>
+
+          <button class="toggle-row" data-toggle="launchAtLogin" role="switch" aria-checked="false">
+            <div class="toggle-text">
+              <span class="toggle-title">开机自动启动</span>
+              <span class="toggle-desc">登录 macOS 后安静常驻菜单栏</span>
+            </div>
+            <span class="switch-track"><span class="switch-thumb"></span></span>
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <footer class="prefs-footer">
+      <button class="text-danger-btn" id="quitBtn">退出 MoveNow</button>
+      <span class="version-label">MoveNow v1.0</span>
+    </footer>
+  </main>
+
+  <script src="../core/actions.js"></script>
+  <script src="../core/state-machine.js"></script>
+  <script src="../core/bridge.js"></script>
+  <script src="preferences.js"></script>
+</body>
+</html>

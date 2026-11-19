@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MoveNow Overlay</title>
+  <link rel="stylesheet" href="../themes/themes.css" />
+  <link rel="stylesheet" href="overlay.css" />
+</head>
+<body>
+  <!-- Surface: 15s Pre-Alert Capsule -->
+  <section class="surface surface-pre-alert" id="surfacePreAlert" hidden>
+    <div class="capsule-card">
+      <div class="capsule-dot"></div>
+      <div class="capsule-copy">
+        <span class="capsule-text" id="preAlertText">15 秒后歇一会儿，先把手头这句收个尾。</span>
+        <div class="capsule-progress-track">
+          <div class="capsule-progress-fill" id="preAlertProgress"></div>
+        </div>
+      </div>
+      <div class="capsule-actions">
+        <button class="pill-btn subtle" id="preRestNowBtn">现在就歇</button>
+        <button class="pill-btn primary" id="preSnoozeBtn">再忙 5 分钟</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Surface: Fullscreen Break & Stage-2 Frost Seal (Primary Monitor) -->
+  <section class="surface surface-fullscreen" id="surfaceFullscreen" hidden>
+    <div class="fs-backdrop"></div>
+    <canvas class="optical-canvas" id="fsOpticalCanvas"></canvas>
+
+    <!-- Stage-1: Active Break Content -->
+    <div class="fs-content" id="fsContent">
+      <div class="fs-stage" id="fsStage"></div>
+      <div class="fs-nature-breath" id="fsNatureBreath" hidden>吸气</div>
+      <h1 class="fs-message" id="fsMessage"></h1>
+
+      <div class="fs-timer-row">
+        <div class="fs-progress-ring" id="fsProgressRing">
+          <svg viewBox="0 0 44 44" width="44" height="44" aria-hidden="true">
+            <circle class="ring-bg" cx="22" cy="22" r="18"></circle>
+            <circle class="ring-fg" id="fsRingFg" cx="22" cy="22" r="18"></circle>
+          </svg>
+          <span class="ring-sec" id="fsSeconds">45</span>
+        </div>
+      </div>
+
+      <div class="fs-footer">
+        <button class="pill-btn fs-snooze" id="fsSnoozeBtn">再忙 5 分钟</button>
+        <div class="fs-escape-note" id="fsEscapeNote" aria-live="polite">双击 ESC 跳过本轮</div>
+      </div>
+    </div>
+
+    <!-- Stage-2: Theme-Exclusive Away Sealed Mode -->
+    <div class="sealed-stage" id="sealedStage" aria-live="polite">
+      <p class="sealed-message" id="sealedMessage"></p>
+      <div class="sealed-guardian" id="guardianStage" hidden></div>
+      <div class="sealed-wake-hint" id="sealedWakeHint">轻触键鼠或任意键返回桌面</div>
+    </div>
+  </section>
+
+  <!-- Surface: Secondary Monitor Veil & Synced Optics/Frost -->
+  <section class="surface surface-secondary-veil" id="surfaceSecondaryVeil" hidden>
+    <div class="fs-backdrop"></div>
+    <canvas class="optical-canvas" id="secOpticalCanvas"></canvas>
+  </section>
+
+  <!-- Surface: Corner Light Companion Card -->
+  <section class="surface surface-corner-card" id="surfaceCornerCard" hidden>
+    <div class="corner-card">
+      <div class="corner-top">
+        <div class="corner-stage" id="cornerStage"></div>
+        <div class="corner-body">
+          <p class="corner-message" id="cornerMessage"></p>
+          <p class="corner-hint" id="cornerHint" hidden></p>
+        </div>
+      </div>
+      <div class="corner-bottom">
+        <span class="corner-timer" id="cornerTimer">0:45</span>
+        <div class="corner-actions">
+          <button class="pill-btn subtle" id="cornerSkipBtn" hidden>跳过</button>
+          <button class="pill-btn primary" id="cornerSnoozeBtn">再忙 5 分钟</button>
+        </div>
+      </div>
+      <div class="corner-progress-line">
+        <div class="corner-progress-fill" id="cornerProgress"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Surface: Edge Glow Peripheral Frame (Click-through) -->
+  <section class="surface surface-edge-frame" id="surfaceEdgeFrame" hidden>
+    <div class="edge-vignette"></div>
+  </section>
+
+  <!-- Surface: Edge Glow Interactive Pill -->
+  <section class="surface surface-edge-pill" id="surfaceEdgePill" hidden>
+    <div class="capsule-card edge-pill-card">
+      <div class="capsule-dot"></div>
+      <div class="capsule-copy">
+        <span class="capsule-text" id="edgeMessage"></span>
+        <span class="edge-sub-hint" id="edgeHint" hidden></span>
+      </div>
+      <span class="edge-timer" id="edgeTimer">45s</span>
+      <button class="pill-btn primary" id="edgeSnoozeBtn">再忙 5 分钟</button>
+    </div>
+  </section>
+
+  <!-- Surface: Gentle Toast (e.g. 3-strike Auto-DND) -->
+  <section class="surface surface-toast" id="surfaceToast" hidden>
+    <div class="toast-card" id="toastText"></div>
+  </section>
+
+  <script src="../core/actions.js"></script>
+  <script src="../core/state-machine.js"></script>
+  <script src="../core/bridge.js"></script>
+  <script src="../themes/geometric.js"></script>
+  <script src="../themes/sketch.js"></script>
+  <script src="../themes/nature-window.js"></script>
+  <script src="../themes/theme-stage.js"></script>
+  <script src="overlay.js"></script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>欢迎使用 MoveNow</title>
+  <link rel="stylesheet" href="../themes/themes.css" />
+  <link rel="stylesheet" href="welcome.css" />
+</head>
+<body>
+  <main class="welcome-shell">
+    <section class="welcome-preview">
+      <div class="welcome-stage" id="welcomeStage"></div>
+      <div class="welcome-nature-pills" id="welcomeNaturePills" hidden>
+        <button class="welcome-npill active" data-nature="bokeh">失焦</button>
+        <button class="welcome-npill" data-nature="mist">起雾</button>
+        <button class="welcome-npill" data-nature="frost">凝霜</button>
+      </div>
+      <p class="welcome-sample" id="welcomeSample">已经连轴转 45 分钟了，先把肩膀放下来吧。</p>
+    </section>
+
+    <section class="welcome-body">
+      <header class="welcome-header">
+        <h1>MoveNow · 动一下</h1>
+        <p>安静待在右上角菜单栏里，不抢打字焦点；离座休息未归时自然封存桌面防窥，回来轻触即刻唤醒。</p>
+      </header>
+
+      <div class="welcome-group">
+        <div class="group-label">选一套顺眼的陪伴风格</div>
+        <div class="choice-row three-col" id="themeChoices">
+          <button class="choice-card active" data-theme="geometric">
+            <span class="choice-name">几何生灵</span>
+            <span class="choice-desc">温润几何 · 自然呼吸</span>
+          </button>
+          <button class="choice-card" data-theme="sketch">
+            <span class="choice-name">简笔日常</span>
+            <span class="choice-desc">手绘线条 · 纸感日常</span>
+          </button>
+          <button class="choice-card" data-theme="nature_window">
+            <span class="choice-name">自然视窗</span>
+            <span class="choice-desc">失焦 / 起雾 / 凝霜</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="welcome-group">
+        <div class="group-label">选一种不打扰你的提醒方式</div>
+        <div class="choice-row three-col" id="modeChoices">
+          <button class="choice-card active" data-mode="fullscreen_preview">
+            <span class="choice-name">15s 预告 + 全屏</span>
+            <span class="choice-desc">先收尾，再柔和遮罩</span>
+          </button>
+          <button class="choice-card" data-mode="corner_card">
+            <span class="choice-name">角落轻卡片</span>
+            <span class="choice-desc">浮在屏幕角落不遮挡</span>
+          </button>
+          <button class="choice-card" data-mode="edge_glow">
+            <span class="choice-name">边缘光影氛围</span>
+            <span class="choice-desc">屏边轻柔光晕暗示</span>
+          </button>
+        </div>
+      </div>
+
+      <footer class="welcome-footer">
+        <span class="footer-note">默认每 45 分钟放松 45 秒 · 静音不惊吓</span>
+        <button class="start-btn" id="startBtn">收进菜单栏开始</button>
+      </footer>
+    </section>
+  </main>
+
+  <script src="../core/actions.js"></script>
+  <script src="../core/state-machine.js"></script>
+  <script src="../core/bridge.js"></script>
+  <script src="../themes/geometric.js"></script>
+  <script src="../themes/sketch.js"></script>
+  <script src="../themes/nature-window.js"></script>
+  <script src="../themes/theme-stage.js"></script>
+  <script src="welcome.js"></script>
+</body>
+</html>

@@ -57,8 +57,13 @@
   function startOpticalLoop() {
     if (opticalRafId !== null) return;
     function step(now) {
-      if (opticalActive && opticalEngine && !document.hidden) {
-        opticalEngine.update(now);
+      if (!document.hidden) {
+        if (opticalActive && opticalEngine) {
+          opticalEngine.update(now);
+        }
+        if (currentPhase === 'sealed') {
+          updateSealedLiveScene(now);
+        }
       }
       if (!fsNatureBreath.hidden) {
         const cycle = (now / 1000) % 10;
@@ -83,9 +88,133 @@
   const fsEscapeNote = document.getElementById('fsEscapeNote');
   const fsSnoozeBtn = document.getElementById('fsSnoozeBtn');
 
+  const sealedStageRoot = document.getElementById('sealedStage');
+  const sealedClockEl = document.getElementById('sealedClock');
+  const sealedStatusTextEl = document.getElementById('sealedStatusText');
+  const sealedSketchLineEl = document.getElementById('sealedSketchLine');
+  const sealedDividerEl = document.getElementById('sealedDivider');
+  const sealedFrontCanvas = document.getElementById('sealedFrontCanvas');
   const sealedMessageEl = document.getElementById('sealedMessage');
   const sealedWakeHintEl = document.getElementById('sealedWakeHint');
   const guardianStageEl = document.getElementById('guardianStage');
+
+  let currentSealedLayout = 'glass_clock';
+  let lastGuardianPose = '';
+  let frontCanvasW = 0;
+  let frontCanvasH = 0;
+  let frontCanvasDpr = 1;
+  const frontCtx = sealedFrontCanvas ? sealedFrontCanvas.getContext('2d') : null;
+  const frontDepthOrbs = [
+    { x: 0.36, y: 0.38, r: 105, vx: 0.014, vy: 0.009, warm: false },
+    { x: 0.62, y: 0.44, r: 128, vx: -0.011, vy: 0.008, warm: true },
+    { x: 0.48, y: 0.33, r: 88, vx: 0.009, vy: -0.011, warm: false }
+  ];
+
+  function getClockHHMM() {
+    const d = new Date();
+    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  }
+
+  function updateSealedLiveScene(nowMs) {
+    if (sealedClockEl) {
+      const hhmm = getClockHHMM();
+      if (sealedClockEl.textContent !== hhmm) {
+        sealedClockEl.textContent = hhmm;
+      }
+    }
+
+    const t = nowMs / 1000;
+
+    // 1. Autonomous Living Guardian Life-Cycle (70% calm nap, periodic patrol/yawn/stretch/tea/stroll!)
+    if (currentTheme === 'geometric' && !guardianStageEl.hidden) {
+      const c = t % 36;
+      const pose = c < 16
+        ? 'guardian'
+        : c < 22
+          ? 'gaze'
+          : c < 27
+            ? 'stretch_up'
+            : c < 34
+              ? 'tea'
+              : 'guardian';
+      if (pose !== lastGuardianPose) {
+        lastGuardianPose = pose;
+        ensureGuardianStage().setState({
+          theme: 'geometric',
+          pose: pose,
+          mood: 'calm',
+          easterEgg: pose === 'tea' ? 'tea' : null
+        });
+      }
+      guardianStageEl.style.transform = '';
+    } else if (currentTheme === 'sketch' && !guardianStageEl.hidden) {
+      const c = t % 42;
+      const pose = c < 17
+        ? 'nap_guard'
+        : c < 22
+          ? 'yawn'
+          : c < 27
+            ? 'stretch_up'
+            : c < 36
+              ? 'walk'
+              : 'tea';
+      if (pose !== lastGuardianPose) {
+        lastGuardianPose = pose;
+        ensureGuardianStage().setState({
+          theme: 'sketch',
+          pose: pose,
+          mood: 'calm',
+          easterEgg: pose === 'yawn' ? 'yawn' : null
+        });
+      }
+      if (pose === 'walk') {
+        const walkProgress = (c - 27) / 9; // 0 -> 1
+        const strollX = Math.sin(walkProgress * Math.PI * 2) * 56;
+        guardianStageEl.style.transform = 'translateX(' + strollX.toFixed(1) + 'px)';
+      } else {
+        guardianStageEl.style.transform = 'translateX(0px)';
+      }
+    }
+
+    // 2. Foreground Depth Layer Orbs drifting IN FRONT OF Giant Glass Clock (Apple Depth Effect!)
+    if (frontCtx && sealedFrontCanvas) {
+      const activeDepth = currentSealedLayout === 'glass_clock';
+      sealedFrontCanvas.classList.toggle('active', activeDepth);
+      if (activeDepth) {
+        const rect = sealedFrontCanvas.getBoundingClientRect();
+        const w = Math.max(40, Math.round(rect.width));
+        const h = Math.max(40, Math.round(rect.height));
+        const dpr = Math.min(2, window.devicePixelRatio || 1);
+        if (w !== frontCanvasW || h !== frontCanvasH || dpr !== frontCanvasDpr) {
+          frontCanvasW = w;
+          frontCanvasH = h;
+          frontCanvasDpr = dpr;
+          sealedFrontCanvas.width = Math.round(w * dpr);
+          sealedFrontCanvas.height = Math.round(h * dpr);
+          frontCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+        frontCtx.clearRect(0, 0, w, h);
+        const dark = Boolean(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        for (let i = 0; i < frontDepthOrbs.length; i++) {
+          const o = frontDepthOrbs[i];
+          const ox = w * (o.x + Math.sin(t * 0.24 + i * 2.2) * 0.14);
+          const oy = h * (o.y + Math.cos(t * 0.19 + i * 1.7) * 0.08);
+          const orad = o.r * (w / 1280 + 0.35);
+          const g = frontCtx.createRadialGradient(ox, oy, 4, ox, oy, orad);
+          if (dark) {
+            g.addColorStop(0, o.warm ? 'rgba(236, 178, 146, 0.20)' : 'rgba(255, 255, 255, 0.16)');
+          } else {
+            g.addColorStop(0, o.warm ? 'rgba(255, 244, 234, 0.56)' : 'rgba(255, 255, 255, 0.62)');
+          }
+          g.addColorStop(1, 'rgba(255, 255, 255, 0)');
+          frontCtx.fillStyle = g;
+          frontCtx.beginPath();
+          frontCtx.arc(ox, oy, orad, 0, Math.PI * 2);
+          frontCtx.fill();
+        }
+      }
+    }
+  }
 
   const cornerMessage = document.getElementById('cornerMessage');
   const cornerHint = document.getElementById('cornerHint');
@@ -258,6 +387,35 @@
       syncFullBleedOptics('fsOpticalCanvas', snapshot);
 
       if (isSealed) {
+        const sealedStyle = snapshot.sealedStyle || 'warm_matte';
+        if (currentTheme === 'geometric') {
+          currentSealedLayout = 'glass_clock';
+        } else if (currentTheme === 'sketch') {
+          currentSealedLayout = 'sketch_paper';
+        } else if (sealedStyle === 'bokeh') {
+          currentSealedLayout = 'solar_orbit';
+        } else {
+          currentSealedLayout = 'editorial_wave';
+        }
+        if (sealedStageRoot) {
+          sealedStageRoot.setAttribute('data-sealed-layout', currentSealedLayout);
+        }
+        if (sealedSketchLineEl) {
+          sealedSketchLineEl.hidden = currentSealedLayout !== 'sketch_paper';
+        }
+        if (sealedDividerEl) {
+          sealedDividerEl.hidden = currentSealedLayout !== 'editorial_wave';
+        }
+        if (sealedClockEl) {
+          sealedClockEl.textContent = getClockHHMM();
+        }
+        if (sealedStatusTextEl) {
+          const awayMins = Math.floor((snapshot.sealedElapsedSec || 0) / 60);
+          sealedStatusTextEl.textContent = awayMins >= 1
+            ? '已离开 ' + awayMins + ' 分钟 · 后台安稳运行中'
+            : '刚离开座位 · 后台安稳运行中';
+        }
+
         const msg = snapshot.sealedMessage || '桌面已暂时封存，后台仍在安稳运行。';
         setSmoothText(
           sealedMessageEl,
@@ -269,22 +427,31 @@
         );
         sealedWakeHintEl.textContent = snapshot.sealedWakeHint || '轻触键鼠或任意键返回桌面';
 
-        // Theme-exclusive guardian companion (Geometric sits & breathes; Sketch naps with cup; Nature has no character)
         if (currentTheme === 'geometric' || currentTheme === 'sketch') {
           guardianStageEl.hidden = false;
-          ensureGuardianStage().setState({
-            theme: currentTheme,
-            pose: currentTheme === 'geometric' ? 'guardian' : 'nap_guard',
-            mood: 'calm',
-            easterEgg: null
-          });
+          if (!lastGuardianPose) {
+            const initPose = currentTheme === 'geometric' ? 'guardian' : 'nap_guard';
+            lastGuardianPose = initPose;
+            ensureGuardianStage().setState({
+              theme: currentTheme,
+              pose: initPose,
+              mood: 'calm',
+              easterEgg: null
+            });
+          }
         } else {
           guardianStageEl.hidden = true;
+          lastGuardianPose = '';
         }
+        startOpticalLoop();
         return;
       }
 
       guardianStageEl.hidden = true;
+      lastGuardianPose = '';
+      if (sealedFrontCanvas) {
+        sealedFrontCanvas.classList.remove('active');
+      }
       currentDisplayedSealedMessage = '';
 
       if (isNature) {

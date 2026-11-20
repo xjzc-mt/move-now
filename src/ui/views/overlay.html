@@ -52,10 +52,22 @@
       </div>
     </div>
 
-    <!-- Stage-2: Theme-Exclusive Away Sealed Mode -->
-    <div class="sealed-stage" id="sealedStage" aria-live="polite">
-      <p class="sealed-message" id="sealedMessage"></p>
-      <div class="sealed-guardian" id="guardianStage" hidden></div>
+    <!-- Stage-2: Theme-Exclusive Big-Screen Living Sealed Mode -->
+    <div class="sealed-stage" id="sealedStage" data-sealed-layout="glass_clock" aria-live="polite">
+      <div class="sealed-hero" id="sealedHero">
+        <div class="sealed-clock-wrap" id="sealedClockWrap">
+          <div class="sealed-clock" id="sealedClock">00:00</div>
+          <div class="sealed-guardian" id="guardianStage" hidden></div>
+        </div>
+        <div class="sealed-sketch-line" id="sealedSketchLine" hidden></div>
+        <div class="sealed-divider" id="sealedDivider" hidden></div>
+        <div class="sealed-status-pill" id="sealedStatusPill">
+          <span class="sealed-live-dot"></span>
+          <span class="sealed-status-text" id="sealedStatusText">后台安稳运转中</span>
+        </div>
+        <p class="sealed-message" id="sealedMessage"></p>
+      </div>
+      <canvas class="sealed-front-canvas" id="sealedFrontCanvas"></canvas>
       <div class="sealed-wake-hint" id="sealedWakeHint">轻触键鼠或任意键返回桌面</div>
     </div>
   </section>

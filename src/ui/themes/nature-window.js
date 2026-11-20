@@ -144,38 +144,28 @@
       const vctx = off.getContext('2d');
       vctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      // Warm translucent vellum tracing paper base
-      vctx.fillStyle = dark ? 'rgba(30, 31, 34, 0.78)' : 'rgba(246, 242, 232, 0.78)';
+      // Bright, airy, high-key sketch paper base (never muddy or dark!)
+      vctx.fillStyle = dark ? 'rgba(30, 31, 35, 0.80)' : 'rgba(251, 249, 244, 0.84)';
       vctx.fillRect(0, 0, width, height);
 
       const rand = mulberry32(frostSeed + 31337);
-      // Ultra-fine paper grain fibers (subtle tactile vellum texture, zero harsh noise)
-      const fiberCount = compact ? 120 : 900;
+      // Ultra-fine subtle paper fibers (clean & bright, zero heavy vignette)
+      const fiberCount = compact ? 90 : 520;
       vctx.lineCap = 'round';
       for (let i = 0; i < fiberCount; i++) {
         const fx = rand() * width;
         const fy = rand() * height;
-        const len = 4 + rand() * 14;
+        const len = 4 + rand() * 12;
         const ang = rand() * Math.PI * 2;
         vctx.strokeStyle = dark
-          ? 'rgba(232, 226, 214,' + (0.025 + rand() * 0.035).toFixed(3) + ')'
-          : 'rgba(138, 128, 112,' + (0.035 + rand() * 0.045).toFixed(3) + ')';
-        vctx.lineWidth = 0.7;
+          ? 'rgba(232, 226, 214,' + (0.020 + rand() * 0.025).toFixed(3) + ')'
+          : 'rgba(155, 148, 136,' + (0.022 + rand() * 0.028).toFixed(3) + ')';
+        vctx.lineWidth = 0.65;
         vctx.beginPath();
         vctx.moveTo(fx, fy);
         vctx.lineTo(fx + Math.cos(ang) * len, fy + Math.sin(ang) * len);
         vctx.stroke();
       }
-
-      // Gentle warm deckle vignette around perimeter
-      const cx = width * 0.5;
-      const cy = height * 0.5;
-      const maxR = Math.hypot(cx, cy);
-      const vig = vctx.createRadialGradient(cx, cy, maxR * 0.25, cx, cy, maxR * 1.05);
-      vig.addColorStop(0, 'rgba(0,0,0,0)');
-      vig.addColorStop(1, dark ? 'rgba(16, 17, 20, 0.24)' : 'rgba(196, 184, 164, 0.20)');
-      vctx.fillStyle = vig;
-      vctx.fillRect(0, 0, width, height);
 
       vellumOffscreen = off;
     }
@@ -397,6 +387,82 @@
         ctx.arc(d.x, d.y, r, 0, Math.PI * 2);
         ctx.fill();
       }
+
+      // Turrell Solar Orbit & Celestial Dial in Big-Screen Sealed Mode!
+      if (deepSeal && !compact) {
+        const vis = Math.max(0, 1 - thawFrac * 1.3);
+        if (vis > 0.01) {
+          const cx = width * 0.5;
+          const cy = height * 0.44;
+          const R = Math.min(width * 0.28, height * 0.30, 260);
+          // Smooth continuous 60-second celestial orbit synced to real seconds + ms
+          const nowDate = new Date();
+          const secFrac = (nowDate.getSeconds() + nowDate.getMilliseconds() / 1000) / 60;
+          const angle = secFrac * Math.PI * 2 - Math.PI * 0.5;
+          const sx = cx + Math.cos(angle) * R;
+          const sy = cy + Math.sin(angle) * R;
+
+          ctx.save();
+          ctx.globalAlpha = vis;
+
+          // Rotating Turrell atmospheric radial light spill following the sun pearl
+          const spill = ctx.createRadialGradient(sx, sy, 4, cx, cy, R * 1.85);
+          if (dark) {
+            spill.addColorStop(0, 'rgba(255, 190, 134, 0.34)');
+            spill.addColorStop(0.42, 'rgba(226, 136, 98, 0.12)');
+            spill.addColorStop(0.80, 'rgba(84, 140, 174, 0.06)');
+          } else {
+            spill.addColorStop(0, 'rgba(244, 162, 102, 0.32)');
+            spill.addColorStop(0.45, 'rgba(224, 138, 94, 0.12)');
+            spill.addColorStop(0.82, 'rgba(92, 146, 176, 0.06)');
+          }
+          spill.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = spill;
+          ctx.fillRect(0, 0, width, height);
+
+          // 60 fine celestial dial ticks
+          for (let k = 0; k < 60; k++) {
+            const a = (k / 60) * Math.PI * 2;
+            const major = k % 5 === 0;
+            const r1 = R - (major ? 7 : 3.5);
+            const r2 = R + (major ? 7 : 3.5);
+            ctx.strokeStyle = dark
+              ? (major ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.10)')
+              : (major ? 'rgba(36,52,68,0.26)' : 'rgba(36,52,68,0.10)');
+            ctx.lineWidth = major ? 1.3 : 0.85;
+            ctx.beginPath();
+            ctx.moveTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1);
+            ctx.lineTo(cx + Math.cos(a) * r2, cy + Math.sin(a) * r2);
+            ctx.stroke();
+          }
+
+          // Main hairline orbital ring
+          ctx.strokeStyle = dark ? 'rgba(255,255,255,0.18)' : 'rgba(36,52,68,0.16)';
+          ctx.lineWidth = 1.1;
+          ctx.beginPath();
+          ctx.arc(cx, cy, R, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // Luminous trailing comet arc behind sun pearl
+          ctx.strokeStyle = dark ? 'rgba(255, 196, 146, 0.62)' : 'rgba(224, 130, 78, 0.62)';
+          ctx.lineWidth = 2.4;
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.arc(cx, cy, R, angle - 0.88, angle);
+          ctx.stroke();
+
+          // Glowing sun pearl
+          ctx.shadowColor = dark ? 'rgba(255, 180, 120, 0.92)' : 'rgba(230, 130, 75, 0.78)';
+          ctx.shadowBlur = 18;
+          ctx.fillStyle = dark ? '#FFE8CC' : '#EA8652';
+          ctx.beginPath();
+          ctx.arc(sx, sy, 5.8, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+
+          ctx.restore();
+        }
+      }
     }
 
     function renderMist(nowMs, dtSec, dark, thawFrac) {
@@ -534,6 +600,42 @@
         ctx.fill();
       }
       ctx.restore();
+
+      if (deepSeal && !compact) {
+        renderVitalityWave(nowMs, dark, visibility);
+      }
+    }
+
+    function renderVitalityWave(nowMs, dark, vis) {
+      if (vis <= 0.02) return;
+      const t = nowMs / 1000;
+      const leftX = width * 0.09;
+      const rightX = width * 0.91;
+      const span = rightX - leftX;
+      const baseY = height * 0.885;
+
+      ctx.save();
+      ctx.globalAlpha = vis;
+      // Dual-layered silky background-task vitality waves
+      for (let layer = 0; layer < 2; layer++) {
+        ctx.strokeStyle = layer === 0
+          ? (dark ? 'rgba(156, 216, 248, 0.44)' : 'rgba(72, 126, 168, 0.36)')
+          : (dark ? 'rgba(210, 238, 255, 0.22)' : 'rgba(92, 146, 184, 0.18)');
+        ctx.lineWidth = layer === 0 ? 1.5 : 1.1;
+        ctx.beginPath();
+        for (let x = leftX; x <= rightX; x += 5) {
+          const norm = (x - leftX) / span;
+          const env = Math.sin(norm * Math.PI);
+          const phaseShift = layer * 1.4;
+          const y = baseY
+            + Math.sin(norm * 15 - t * 2.6 + phaseShift) * (layer === 0 ? 7.5 : 5.0) * env
+            + Math.sin(norm * 8 + t * 1.5 - phaseShift) * 3.8 * env;
+          if (x === leftX) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+      ctx.restore();
     }
 
     function renderWarmMatte(nowMs, dark, thawFrac) {
@@ -546,24 +648,25 @@
       ctx.save();
       ctx.globalAlpha = alpha;
       // Warm matte frosted cloud veil for Geometric Sealed Mode
-      ctx.fillStyle = dark ? 'rgba(28, 30, 34, 0.76)' : 'rgba(245, 241, 234, 0.76)';
+      ctx.fillStyle = dark ? 'rgba(26, 28, 32, 0.78)' : 'rgba(246, 243, 236, 0.78)';
       ctx.fillRect(0, 0, width, height);
 
-      // Slow organic warm cloud glows
+      // Slow organic warm apricot & sage depth orbs behind the Giant Glass Clock
       const clouds = [
-        { x: 0.25, y: 0.32, r: 0.45, warm: true },
-        { x: 0.76, y: 0.64, r: 0.50, warm: false },
-        { x: 0.52, y: 0.48, r: 0.38, warm: true }
+        { x: 0.28, y: 0.36, r: 0.36, warm: true, sp: 0.24 },
+        { x: 0.72, y: 0.58, r: 0.40, warm: false, sp: 0.19 },
+        { x: 0.50, y: 0.42, r: 0.28, warm: true, sp: 0.31 },
+        { x: 0.38, y: 0.66, r: 0.30, warm: false, sp: 0.27 }
       ];
       clouds.forEach(function (c, i) {
-        const px = width * c.x + Math.sin(t * 0.22 + i * 2.1) * 46;
-        const py = height * c.y + Math.cos(t * 0.18 + i * 1.4) * 32;
-        const pr = Math.max(width, height) * c.r;
+        const px = width * c.x + Math.sin(t * c.sp + i * 2.1) * (width * 0.065);
+        const py = height * c.y + Math.cos(t * (c.sp * 0.85) + i * 1.4) * (height * 0.055);
+        const pr = Math.min(width, height) * c.r;
         const g = ctx.createRadialGradient(px, py, 0, px, py, pr);
         if (c.warm) {
-          g.addColorStop(0, dark ? 'rgba(214, 134, 102, 0.14)' : 'rgba(226, 152, 118, 0.18)');
+          g.addColorStop(0, dark ? 'rgba(224, 140, 104, 0.24)' : 'rgba(236, 154, 114, 0.28)');
         } else {
-          g.addColorStop(0, dark ? 'rgba(118, 160, 144, 0.12)' : 'rgba(128, 168, 154, 0.16)');
+          g.addColorStop(0, dark ? 'rgba(116, 168, 150, 0.20)' : 'rgba(122, 174, 158, 0.24)');
         }
         g.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = g;
@@ -599,15 +702,43 @@
       ctx.globalAlpha = easedGrow;
       ctx.drawImage(frostOffscreen, 0, 0, width, height);
 
-      // Subtle living crystalline shimmer
+      // Sweeping iridescent aurora shimmer & drifting micro ice sparkles in Sealed Mode
       const t = nowMs / 1000;
-      const shimmerAlpha = (0.05 + 0.03 * Math.sin(t * 1.3)) * easedGrow * (1 - thawFrac);
-      const shimGrad = ctx.createLinearGradient(0, 0, width, height);
-      shimGrad.addColorStop(0, 'rgba(255,255,255,' + shimmerAlpha.toFixed(3) + ')');
-      shimGrad.addColorStop(0.5, 'rgba(170,214,244,0)');
-      shimGrad.addColorStop(1, 'rgba(255,255,255,' + shimmerAlpha.toFixed(3) + ')');
-      ctx.fillStyle = shimGrad;
+      const sweepPos = ((t * 0.14) % 1.8) - 0.4;
+      const sweepGrad = ctx.createLinearGradient(
+        width * (sweepPos - 0.28), 0,
+        width * (sweepPos + 0.28), height * 0.85
+      );
+      const shimPeak = (deepSeal ? 0.22 : 0.08) * easedGrow * (1 - thawFrac);
+      sweepGrad.addColorStop(0, 'rgba(255, 255, 255, 0)');
+      sweepGrad.addColorStop(0.45, dark
+        ? 'rgba(186, 228, 255,' + shimPeak.toFixed(3) + ')'
+        : 'rgba(255, 255, 255,' + (shimPeak * 1.45).toFixed(3) + ')');
+      sweepGrad.addColorStop(0.55, dark
+        ? 'rgba(225, 245, 255,' + (shimPeak * 1.2).toFixed(3) + ')'
+        : 'rgba(210, 236, 255,' + (shimPeak * 1.1).toFixed(3) + ')');
+      sweepGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      ctx.fillStyle = sweepGrad;
       ctx.fillRect(0, 0, width, height);
+
+      if (deepSeal && !compact) {
+        const sparkleVis = easedGrow * (1 - thawFrac);
+        for (let s = 0; s < 24; s++) {
+          const sx = (((s * 0.137) + t * (0.008 + (s % 3) * 0.004)) % 1) * width;
+          const sy = (((s * 0.219) + t * (0.014 + (s % 4) * 0.005)) % 1) * height;
+          const twinkle = 0.25 + 0.75 * Math.abs(Math.sin(t * 1.8 + s * 1.9));
+          ctx.fillStyle = dark
+            ? 'rgba(226, 244, 255,' + (twinkle * 0.58 * sparkleVis).toFixed(3) + ')'
+            : 'rgba(255, 255, 255,' + (twinkle * 0.82 * sparkleVis).toFixed(3) + ')';
+          ctx.beginPath();
+          ctx.arc(sx, sy, 1.4 + (s % 3) * 0.65, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      if (deepSeal && !compact) {
+        renderVitalityWave(nowMs, dark, easedGrow * (1 - thawFrac));
+      }
 
       // Radial warm thaw from center outward (~0.82s)
       if (thawFrac > 0) {

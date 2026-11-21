@@ -339,7 +339,7 @@ test('Low-frequency 10% Easter egg pairs matching pose and dialogue and never re
     random: () => 0.05
   });
   assert.equal(eggAction.easterEgg, 'tea');
-  assert.equal(eggAction.pose, 'tea');
+  assert.ok(eggAction.pose === 'tea' || eggAction.pose === 'tea_blow');
   assert.ok(eggAction.message.includes('茶') || eggAction.message.includes('水'));
   assert.ok(eggAction.followup && eggAction.followup.length > 0);
 

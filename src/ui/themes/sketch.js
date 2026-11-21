@@ -185,18 +185,18 @@
     const spHeadAngle = makeSpring(0, 22, 7.2);
     const spWalkSniff = makeSpring(0, 18, 6.8);
 
-    // Autonomous Markov Puppy Brain
+    // Autonomous Markov Puppy Brain (crisp 3.8~6.8s organic beats so life loop is immediately vivid!)
     const AUTO_PUPPY_POOL = [
-      { pose: 'nap_guard', weight: 2.8, minSec: 6.5, maxSec: 12.0 },
-      { pose: 'sleep_bubble', weight: 1.8, minSec: 6.0, maxSec: 10.5 },
-      { pose: 'head_cock', weight: 1.5, minSec: 4.5, maxSec: 7.2 },
-      { pose: 'yawn', weight: 1.3, minSec: 4.2, maxSec: 6.5 },
-      { pose: 'paw_groom', weight: 1.3, minSec: 4.5, maxSec: 7.0 },
-      { pose: 'play_bow', weight: 1.2, minSec: 4.0, maxSec: 6.2 },
-      { pose: 'walk', weight: 1.5, minSec: 5.0, maxSec: 8.5 },
-      { pose: 'sniff', weight: 1.2, minSec: 4.2, maxSec: 6.8 },
-      { pose: 'butterfly', weight: 1.3, minSec: 5.5, maxSec: 8.8 },
-      { pose: 'water', weight: 1.2, minSec: 5.0, maxSec: 8.0 }
+      { pose: 'nap_guard', weight: 1.9, minSec: 4.0, maxSec: 6.8 },
+      { pose: 'sleep_bubble', weight: 1.7, minSec: 4.2, maxSec: 6.8 },
+      { pose: 'head_cock', weight: 1.7, minSec: 3.8, maxSec: 6.0 },
+      { pose: 'yawn', weight: 1.4, minSec: 3.8, maxSec: 5.8 },
+      { pose: 'paw_groom', weight: 1.5, minSec: 4.0, maxSec: 6.2 },
+      { pose: 'play_bow', weight: 1.4, minSec: 3.8, maxSec: 5.8 },
+      { pose: 'walk', weight: 1.7, minSec: 4.5, maxSec: 7.0 },
+      { pose: 'sniff', weight: 1.4, minSec: 3.8, maxSec: 5.8 },
+      { pose: 'butterfly', weight: 1.6, minSec: 4.5, maxSec: 7.2 },
+      { pose: 'water', weight: 1.3, minSec: 4.2, maxSec: 6.5 }
     ];
 
     let brainPose = 'nap_guard';
@@ -261,7 +261,7 @@
       const curX = stepSpring(spPosX, dt);
       stageMover.style.transform = 'translateX(' + curX.toFixed(2) + 'px)';
 
-      const showButterfly = (pose === 'butterfly' || state.easterEgg === 'butterfly');
+      const showButterfly = (pose === 'butterfly' || pose === 'mote_track' || state.easterEgg === 'butterfly');
       flyGroup.setAttribute('opacity', showButterfly ? '0.78' : '0');
       let flyX = 185, flyY = 74;
       if (showButterfly) {
@@ -274,11 +274,11 @@
 
       const activeMode = (isDnd || pose === 'nap_guard' || pose === 'sleep_bubble')
         ? 'sleep'
-        : (pose === 'gaze' || pose === 'butterfly')
+        : (pose === 'gaze' || pose === 'butterfly' || pose === 'mote_track' || pose === 'patrol_scan')
           ? 'gaze'
           : (pose === 'walk' || pose === 'sniff')
             ? 'walk'
-            : (pose === 'water' || pose === 'tea' || pose === 'neck_tilt' || pose === 'head_cock' || pose === 'paw_groom' || pose === 'wrist_shake' || pose === 'shoulder_roll' || pose === 'breath' || pose === 'yawn' || state.easterEgg === 'yawn' || state.mood === 'tired')
+            : (pose === 'water' || pose === 'tea' || pose === 'tea_blow' || pose === 'cheek_rest' || pose === 'neck_tilt' || pose === 'head_cock' || pose === 'paw_groom' || pose === 'wrist_shake' || pose === 'shoulder_roll' || pose === 'breath' || pose === 'yawn' || state.easterEgg === 'yawn' || state.mood === 'tired')
               ? 'sit'
               : 'stretch';
 
@@ -396,7 +396,7 @@
         tailSit.setAttribute('d', 'M114 158 Q' + (94 + wag * 0.5).toFixed(1) + ' 152 ' + (92 + wag).toFixed(1) + ' 138');
 
         const isYawn = pose === 'yawn' || state.easterEgg === 'yawn';
-        const showCup = pose === 'water' || pose === 'tea';
+        const showCup = pose === 'water' || pose === 'tea' || pose === 'tea_blow';
         cup.setAttribute('opacity', showCup ? '1' : '0');
         if (showCup) {
           steam.setAttribute('transform', 'translate(0, ' + (-((t * 6) % 5)).toFixed(1) + ')');
@@ -447,7 +447,8 @@
           if (!prevAuto || (state.anchorPose && anchorKey !== lastAnchorKey)) {
             lastAnchorKey = anchorKey;
             brainPose = state.anchorPose || 'nap_guard';
-            brainSwitchAt = performance.now() + (9500 + Math.random() * 3500);
+            const startDelay = brainPose === 'nap_guard' ? (3200 + Math.random() * 1800) : (4800 + Math.random() * 2000);
+            brainSwitchAt = performance.now() + startDelay;
             if (brainPose === 'walk') {
               strollTargetX = (Math.random() < 0.5 ? 1 : -1) * (24 + Math.random() * 28);
             }

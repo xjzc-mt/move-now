@@ -104,18 +104,18 @@
     const spArmL = [makeSpring(56, 20, 7.5), makeSpring(136, 20, 7.5), makeSpring(68, 20, 7.5), makeSpring(166, 20, 7.5)];
     const spArmR = [makeSpring(204, 20, 7.5), makeSpring(136, 20, 7.5), makeSpring(192, 20, 7.5), makeSpring(166, 20, 7.5)];
 
-    // Autonomous Markov Brain state
+    // Autonomous Markov Brain state (crisp 3.8~7.0s organic beats so motion is immediately vivid!)
     const AUTO_POOL = [
-      { pose: 'guardian', weight: 3.2, minSec: 6.5, maxSec: 12.0 },
-      { pose: 'patrol_scan', weight: 1.6, minSec: 4.5, maxSec: 7.5 },
-      { pose: 'cheek_rest', weight: 1.5, minSec: 5.5, maxSec: 9.5 },
-      { pose: 'mote_track', weight: 1.4, minSec: 5.5, maxSec: 8.5 },
-      { pose: 'nod_doze', weight: 1.3, minSec: 5.0, maxSec: 8.0 },
-      { pose: 'asym_stretch', weight: 1.1, minSec: 4.2, maxSec: 6.5 },
-      { pose: 'tea_blow', weight: 1.4, minSec: 5.5, maxSec: 8.5 },
-      { pose: 'shoulder_roll', weight: 0.9, minSec: 4.0, maxSec: 6.0 },
-      { pose: 'walk', weight: 1.0, minSec: 4.5, maxSec: 7.2 },
-      { pose: 'happy_squint', weight: 0.9, minSec: 3.8, maxSec: 6.0 }
+      { pose: 'guardian', weight: 2.0, minSec: 4.0, maxSec: 6.8 },
+      { pose: 'patrol_scan', weight: 1.8, minSec: 3.8, maxSec: 6.2 },
+      { pose: 'cheek_rest', weight: 1.6, minSec: 4.2, maxSec: 6.8 },
+      { pose: 'mote_track', weight: 1.8, minSec: 4.5, maxSec: 7.2 },
+      { pose: 'nod_doze', weight: 1.4, minSec: 4.2, maxSec: 6.5 },
+      { pose: 'asym_stretch', weight: 1.5, minSec: 3.8, maxSec: 5.8 },
+      { pose: 'tea_blow', weight: 1.6, minSec: 4.5, maxSec: 7.0 },
+      { pose: 'shoulder_roll', weight: 1.1, minSec: 3.6, maxSec: 5.5 },
+      { pose: 'walk', weight: 1.5, minSec: 4.2, maxSec: 6.5 },
+      { pose: 'happy_squint', weight: 1.1, minSec: 3.4, maxSec: 5.2 }
     ];
     let brainPose = 'guardian';
     let brainSwitchAt = 0;
@@ -202,7 +202,7 @@
       let targetSX = 1 + (0.5 - b) * 0.030 * amp;
       let targetSY = 1 + (b - 0.5) * 0.042 * amp;
       let targetCup = (activePose === 'tea' || activePose === 'tea_blow' || activePose === 'water' || state.easterEgg === 'tea') ? 1 : 0;
-      let targetMote = (activePose === 'mote_track' || state.easterEgg === 'mote') ? 1 : 0;
+      let targetMote = (activePose === 'mote_track' || activePose === 'butterfly' || state.easterEgg === 'mote') ? 1 : 0;
 
       // Micro gaze wander
       if (nowMs >= nextSaccadeAt) {
@@ -243,14 +243,25 @@
         armL = [62, 146, 80, 172];
         armR = [198, 146, 180, 172];
       } else if (activePose === 'patrol_scan') {
-        const scan = Math.sin(t * 0.82);
-        targetGX = scan * 7.2;
+        const scan = Math.sin(t * 1.05);
+        targetGX = scan * 7.8;
         targetGY = -1.2;
-        targetRot = scan * 3.2;
-      } else if (activePose === 'mote_track') {
+        targetRot = scan * 3.8;
+      } else if (activePose === 'mote_track' || activePose === 'butterfly') {
         targetGX = Math.max(-8.5, Math.min(8.5, (mx - 130) * 0.11));
         targetGY = Math.max(-6.5, Math.min(4.5, (my - 102) * 0.10));
         targetRot = (mx - 130) * 0.055;
+      } else if (activePose === 'head_cock') {
+        const side = Math.sin(t * 1.15) >= 0 ? 1 : -1;
+        targetRot = side * 9.5;
+        targetGX = side * 4.5;
+        targetGY = -1.5;
+      } else if (activePose === 'paw_groom') {
+        // Warm palms covering eyes / rubbing temples gently!
+        const rub = Math.sin(t * 2.8) * 3.5;
+        armL = [72, 98 + rub, 108, 106];
+        armR = [188, 98 - rub, 152, 106];
+        targetY = -2.0;
       } else if (activePose === 'cheek_rest') {
         targetRot = 5.2 + Math.sin(t * 0.5) * 1.2;
         targetGX = 2.8;
@@ -304,13 +315,13 @@
       } else if (activePose === 'gaze') {
         targetGX = Math.sin(t * 0.45) * 5.8 + 2.8;
         targetGY = -2.0;
-      } else if (activePose === 'walk') {
-        const step = Math.sin(t * 3.1);
-        targetX = (state.autonomous ? strollTargetX : 0) + Math.sin(t * 1.1) * 12;
-        targetY = -Math.abs(step) * 5.8;
-        targetRot = step * 3.4;
-        armL = [56, 136 + step * 10, 70, 164 + step * 6];
-        armR = [204, 136 - step * 10, 190, 164 - step * 6];
+      } else if (activePose === 'walk' || activePose === 'sniff') {
+        const step = Math.sin(t * 3.4);
+        targetX = (state.autonomous ? strollTargetX : 0) + Math.sin(t * 1.3) * 18;
+        targetY = -Math.abs(step) * 6.5;
+        targetRot = step * 3.8;
+        armL = [56, 136 + step * 11, 70, 164 + step * 7];
+        armR = [204, 136 - step * 11, 190, 164 - step * 7];
       }
 
       if (targetCup > 0.5) {
@@ -377,7 +388,7 @@
       const blinking = nowMs < blinkEndAt;
 
       const dozeClosed = activePose === 'nod_doze' && ((t * 0.55) % 4.0) < 2.7;
-      if (isDnd || activePose === 'breath' || activePose === 'guardian' || dozeClosed || blinking) {
+      if (isDnd || activePose === 'breath' || activePose === 'paw_groom' || activePose === 'guardian' || dozeClosed || blinking) {
         eyesOpen.setAttribute('opacity', '0');
         eyesHappy.setAttribute('opacity', '0');
         eyesClosed.setAttribute('opacity', '1');
@@ -410,7 +421,8 @@
           if (!prevAuto || (state.anchorPose && anchorKey !== lastAnchorKey)) {
             lastAnchorKey = anchorKey;
             brainPose = state.anchorPose || 'guardian';
-            brainSwitchAt = performance.now() + (9500 + Math.random() * 3500);
+            const startDelay = brainPose === 'guardian' ? (3200 + Math.random() * 1800) : (4800 + Math.random() * 2000);
+            brainSwitchAt = performance.now() + startDelay;
             if (brainPose === 'walk') strollTargetX = (Math.random() - 0.5) * 60;
           }
         }

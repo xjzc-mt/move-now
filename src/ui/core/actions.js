@@ -284,7 +284,7 @@
     },
     {
       id: 'chin_tuck',
-      pose: 'lean_back',
+      pose: 'head_cock',
       category: 'neck',
       title: '收颌归位',
       copy: {
@@ -332,7 +332,7 @@
     },
     {
       id: 'palm_warm',
-      pose: 'breath',
+      pose: 'paw_groom',
       category: 'eye',
       title: '暖掌敷眼',
       copy: {
@@ -348,7 +348,7 @@
     },
     {
       id: 'ankle_pump',
-      pose: 'walk',
+      pose: 'sniff',
       category: 'walk',
       title: '起身提踵',
       copy: {
@@ -380,7 +380,7 @@
     },
     {
       id: 'butterfly_hug',
-      pose: 'shoulder_roll',
+      pose: 'tea_blow',
       category: 'shoulder',
       title: '交叉轻拍双肩',
       copy: {
@@ -396,7 +396,7 @@
     },
     {
       id: 'torso_twist',
-      pose: 'chest_open',
+      pose: 'patrol_scan',
       category: 'spine',
       title: '坐姿慢转体',
       copy: {
@@ -869,6 +869,8 @@
     return pickFrom(gram.openers, randFn) + pickFrom(gram.cores, randFn) + pickFrom(gram.closers, randFn);
   }
 
+  let lastChosenPose = '';
+
   function pickBreakAction(options) {
     const opts = options || {};
     const theme = opts.theme || 'geometric';
@@ -883,6 +885,7 @@
         return e.actionId !== lastActionId;
       });
       const egg = pickFrom(filteredEggs.length > 0 ? filteredEggs : eggPool, randFn);
+      lastChosenPose = egg.pose;
       rememberText(recentBreakTexts, egg.message, 16);
       return {
         actionId: egg.actionId,
@@ -895,11 +898,16 @@
     }
 
     const pool = kind === 'eye_rest' ? EYE_REST_ACTIONS : FULL_BREAK_ACTIONS;
-    const candidates = pool.filter(function (a) {
-      return a.id !== lastActionId;
+    // Guarantee consecutive breaks NEVER repeat the same visual pose OR actionId!
+    const distinctPoseCandidates = pool.filter(function (a) {
+      return a.id !== lastActionId && a.pose !== lastChosenPose;
     });
+    const candidates = distinctPoseCandidates.length > 0
+      ? distinctPoseCandidates
+      : pool.filter(function (a) { return a.id !== lastActionId; });
     const list = candidates.length > 0 ? candidates : pool;
     const chosen = list[Math.floor(randFn() * list.length) % list.length];
+    lastChosenPose = chosen.pose;
 
     let message;
     if (kind === 'full' && theme !== 'nature_window' && chosen.category && randFn() < 0.42) {

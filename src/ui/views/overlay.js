@@ -110,9 +110,16 @@
     { x: 0.48, y: 0.33, r: 88, vx: 0.009, vy: -0.011, warm: false }
   ];
 
+  const WEEKDAY_CN = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+
   function getClockHHMM() {
     const d = new Date();
     return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  }
+
+  function getCalmDateStatus() {
+    const d = new Date();
+    return (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + WEEKDAY_CN[d.getDay()] + ' · 桌面小憩中';
   }
 
   function updateSealedLiveScene(nowMs) {
@@ -202,9 +209,9 @@
           const orad = o.r * (w / 1280 + 0.35);
           const g = frontCtx.createRadialGradient(ox, oy, 4, ox, oy, orad);
           if (dark) {
-            g.addColorStop(0, o.warm ? 'rgba(236, 178, 146, 0.20)' : 'rgba(255, 255, 255, 0.16)');
+            g.addColorStop(0, o.warm ? 'rgba(232, 174, 142, 0.18)' : 'rgba(255, 255, 255, 0.14)');
           } else {
-            g.addColorStop(0, o.warm ? 'rgba(255, 244, 234, 0.56)' : 'rgba(255, 255, 255, 0.62)');
+            g.addColorStop(0, o.warm ? 'rgba(244, 232, 218, 0.44)' : 'rgba(248, 245, 238, 0.48)');
           }
           g.addColorStop(1, 'rgba(255, 255, 255, 0)');
           frontCtx.fillStyle = g;
@@ -410,10 +417,7 @@
           sealedClockEl.textContent = getClockHHMM();
         }
         if (sealedStatusTextEl) {
-          const awayMins = Math.floor((snapshot.sealedElapsedSec || 0) / 60);
-          sealedStatusTextEl.textContent = awayMins >= 1
-            ? '已离开 ' + awayMins + ' 分钟 · 后台安稳运行中'
-            : '刚离开座位 · 后台安稳运行中';
+          sealedStatusTextEl.textContent = getCalmDateStatus();
         }
 
         const msg = snapshot.sealedMessage || '桌面已暂时封存，后台仍在安稳运行。';

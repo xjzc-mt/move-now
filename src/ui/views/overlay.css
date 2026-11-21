@@ -258,12 +258,35 @@ body {
   user-select: none;
 }
 
+/* E-ink anti-glare calibration in Sealed Mode for Sketch & Geometric */
+[data-theme="sketch"] .surface-fullscreen.sealed {
+  --sketch-paper: #E8E4DB;
+  --sketch-stroke: #35332F;
+  --ink: #32302C;
+  --ink-muted: #66625B;
+  --ink-faint: #8A857C;
+  --surface: rgba(248, 245, 238, 0.46);
+  --surface-border: rgba(52, 49, 44, 0.11);
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-theme="sketch"] .surface-fullscreen.sealed {
+    --sketch-paper: #3B4046;
+    --sketch-stroke: #E4DFD3;
+    --ink: #E6E1D6;
+    --ink-muted: #A6A29A;
+    --ink-faint: #78756E;
+    --surface: rgba(255, 252, 245, 0.08);
+    --surface-border: rgba(232, 226, 214, 0.14);
+  }
+}
+
 /* 1) Geometric: Giant Translucent Glass Depth Clock + Companion leaning beside digits */
 .sealed-stage[data-sealed-layout="glass_clock"] .sealed-clock {
   font-size: clamp(120px, 16.5vw, 236px);
   font-weight: 700;
-  color: rgba(42, 48, 52, 0.13);
-  -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.72);
+  color: rgba(46, 50, 52, 0.14);
+  -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.54);
   margin-bottom: 18px;
 }
 

@@ -144,12 +144,12 @@
       const vctx = off.getContext('2d');
       vctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      // Bright, airy, high-key sketch paper base (never muddy or dark!)
-      vctx.fillStyle = dark ? 'rgba(30, 31, 35, 0.80)' : 'rgba(251, 249, 244, 0.84)';
+      // A · Kindle E-ink Warm Paper (84% luminance #DFDAD0 in Light; Soft Slate Chalkboard #32363B in Dark — zero glare on 27" monitors!)
+      vctx.fillStyle = dark ? 'rgba(50, 54, 59, 0.88)' : 'rgba(223, 218, 208, 0.88)';
       vctx.fillRect(0, 0, width, height);
 
       const rand = mulberry32(frostSeed + 31337);
-      // Ultra-fine subtle paper fibers (clean & bright, zero heavy vignette)
+      // Subtle tactile paper fibers
       const fiberCount = compact ? 90 : 520;
       vctx.lineCap = 'round';
       for (let i = 0; i < fiberCount; i++) {
@@ -158,8 +158,8 @@
         const len = 4 + rand() * 12;
         const ang = rand() * Math.PI * 2;
         vctx.strokeStyle = dark
-          ? 'rgba(232, 226, 214,' + (0.020 + rand() * 0.025).toFixed(3) + ')'
-          : 'rgba(155, 148, 136,' + (0.022 + rand() * 0.028).toFixed(3) + ')';
+          ? 'rgba(228, 223, 211,' + (0.022 + rand() * 0.026).toFixed(3) + ')'
+          : 'rgba(116, 110, 100,' + (0.026 + rand() * 0.032).toFixed(3) + ')';
         vctx.lineWidth = 0.65;
         vctx.beginPath();
         vctx.moveTo(fx, fy);
@@ -647,8 +647,8 @@
 
       ctx.save();
       ctx.globalAlpha = alpha;
-      // Warm matte frosted cloud veil for Geometric Sealed Mode
-      ctx.fillStyle = dark ? 'rgba(26, 28, 32, 0.78)' : 'rgba(246, 243, 236, 0.78)';
+      // E-ink Warm Matte Stone veil (~84% luminance in Light, zero floodlight glare on big monitors!)
+      ctx.fillStyle = dark ? 'rgba(28, 30, 34, 0.84)' : 'rgba(224, 220, 211, 0.86)';
       ctx.fillRect(0, 0, width, height);
 
       // Slow organic warm apricot & sage depth orbs behind the Giant Glass Clock
@@ -664,9 +664,9 @@
         const pr = Math.min(width, height) * c.r;
         const g = ctx.createRadialGradient(px, py, 0, px, py, pr);
         if (c.warm) {
-          g.addColorStop(0, dark ? 'rgba(224, 140, 104, 0.24)' : 'rgba(236, 154, 114, 0.28)');
+          g.addColorStop(0, dark ? 'rgba(220, 138, 102, 0.22)' : 'rgba(216, 138, 98, 0.24)');
         } else {
-          g.addColorStop(0, dark ? 'rgba(116, 168, 150, 0.20)' : 'rgba(122, 174, 158, 0.24)');
+          g.addColorStop(0, dark ? 'rgba(116, 168, 150, 0.18)' : 'rgba(108, 156, 140, 0.20)');
         }
         g.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = g;

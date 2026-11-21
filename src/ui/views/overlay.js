@@ -132,58 +132,7 @@
 
     const t = nowMs / 1000;
 
-    // 1. Autonomous Living Guardian Life-Cycle (70% calm nap, periodic patrol/yawn/stretch/tea/stroll!)
-    if (currentTheme === 'geometric' && !guardianStageEl.hidden) {
-      const c = t % 36;
-      const pose = c < 16
-        ? 'guardian'
-        : c < 22
-          ? 'gaze'
-          : c < 27
-            ? 'stretch_up'
-            : c < 34
-              ? 'tea'
-              : 'guardian';
-      if (pose !== lastGuardianPose) {
-        lastGuardianPose = pose;
-        ensureGuardianStage().setState({
-          theme: 'geometric',
-          pose: pose,
-          mood: 'calm',
-          easterEgg: pose === 'tea' ? 'tea' : null
-        });
-      }
-      guardianStageEl.style.transform = '';
-    } else if (currentTheme === 'sketch' && !guardianStageEl.hidden) {
-      const c = t % 42;
-      const pose = c < 17
-        ? 'nap_guard'
-        : c < 22
-          ? 'yawn'
-          : c < 27
-            ? 'stretch_up'
-            : c < 36
-              ? 'walk'
-              : 'tea';
-      if (pose !== lastGuardianPose) {
-        lastGuardianPose = pose;
-        ensureGuardianStage().setState({
-          theme: 'sketch',
-          pose: pose,
-          mood: 'calm',
-          easterEgg: pose === 'yawn' ? 'yawn' : null
-        });
-      }
-      if (pose === 'walk') {
-        const walkProgress = (c - 27) / 9; // 0 -> 1
-        const strollX = Math.sin(walkProgress * Math.PI * 2) * 56;
-        guardianStageEl.style.transform = 'translateX(' + strollX.toFixed(1) + 'px)';
-      } else {
-        guardianStageEl.style.transform = 'translateX(0px)';
-      }
-    }
-
-    // 2. Foreground Depth Layer Orbs drifting IN FRONT OF Giant Glass Clock (Apple Depth Effect!)
+    // Foreground Depth Layer Orbs drifting IN FRONT OF Giant Glass Clock (Apple Depth Effect!)
     if (frontCtx && sealedFrontCanvas) {
       const activeDepth = currentSealedLayout === 'glass_clock';
       sealedFrontCanvas.classList.toggle('active', activeDepth);
@@ -433,12 +382,16 @@
 
         if (currentTheme === 'geometric' || currentTheme === 'sketch') {
           guardianStageEl.hidden = false;
-          if (!lastGuardianPose) {
-            const initPose = currentTheme === 'geometric' ? 'guardian' : 'nap_guard';
-            lastGuardianPose = initPose;
+          const anchorPose = snapshot.sealedPose || (currentTheme === 'geometric' ? 'guardian' : 'nap_guard');
+          const anchorToken = currentTheme + ':' + String(snapshot.sealedRotationIndex || 0) + ':' + anchorPose;
+          if (anchorToken !== lastGuardianPose) {
+            lastGuardianPose = anchorToken;
             ensureGuardianStage().setState({
               theme: currentTheme,
-              pose: initPose,
+              autonomous: true,
+              anchorPose: anchorPose,
+              anchorToken: anchorToken,
+              pose: anchorPose,
               mood: 'calm',
               easterEgg: null
             });

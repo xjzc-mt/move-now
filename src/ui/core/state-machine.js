@@ -141,6 +141,7 @@
       breakElapsedWallSec: 0,
       sealedElapsedSec: 0,
       sealedRotationIndex: 0,
+      sealedSessionSeed: 1,
       handsOffPaused: false,
       isPreview: false,
       activeAction: null,
@@ -319,6 +320,7 @@
         state.presentationMode = 'fullscreen';
         state.sealedElapsedSec = 0;
         state.sealedRotationIndex = 0;
+        state.sealedSessionSeed = 1 + Math.floor(randomFn() * 999999);
         state.handsOffPaused = false;
         events.push({ type: 'enter_sealed_mode' });
         events.push({ type: 'update_overlay' });
@@ -880,6 +882,16 @@
         settings.preventSleepDuringSeal &&
         state.sealedElapsedSec < CONSTANTS.MAX_SLEEP_ASSERTION_SEC;
 
+      const sealedBeat = isSealed
+        ? Actions.pickSealedVignette({
+            theme: settings.theme,
+            natureStyle: resolvedNatureStyle,
+            rotationIndex: state.sealedRotationIndex,
+            sealedElapsedSec: state.sealedElapsedSec,
+            sessionSeed: state.sealedSessionSeed
+          })
+        : null;
+
       const snapCore = {
         settings: Object.assign({}, settings),
         phase: state.phase,
@@ -914,14 +926,9 @@
         sealedStyle: sealedStyle,
         sealedElapsedSec: state.sealedElapsedSec,
         sealedRotationIndex: state.sealedRotationIndex,
-        sealedMessage: isSealed
-          ? Actions.getSealedCopy({
-              theme: settings.theme,
-              natureStyle: resolvedNatureStyle,
-              rotationIndex: state.sealedRotationIndex,
-              sealedElapsedSec: state.sealedElapsedSec
-            })
-          : null,
+        sealedMessage: sealedBeat ? sealedBeat.message : null,
+        sealedPose: sealedBeat ? sealedBeat.pose : null,
+        sealedCopySource: sealedBeat ? sealedBeat.source : null,
         sealedWakeHint: isSealed ? Actions.SEALED_WAKE_HINT : null,
         keepAwakeActive: keepAwakeActive,
         isPreview: state.isPreview,

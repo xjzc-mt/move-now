@@ -463,3 +463,41 @@ test('Timer resilience: delayed tick advances full dt and waiting_activity resum
   const woke = engine.tick(activeSensor(0.5, { secondsSinceLastKey: 1.2, secondsSinceLastMouse: 305, mouseDeltaPx: 0 }));
   assert.equal(woke.snapshot.phase, 'working');
 });
+
+test('Hybrid Curated + Compositional Copy & Modular Action Engine produces rich, paired, non-empty variety', () => {
+  assert.ok(Actions.FULL_BREAK_ACTIONS.length >= 20, 'Expanded full break action modules >= 20');
+
+  // Verify both curated paired vignettes and slot-grammar composed lines are generated cleanly
+  const seenSealed = new Set();
+  const sources = new Set();
+  for (let seed = 1; seed <= 40; seed++) {
+    for (const theme of ['geometric', 'sketch', 'nature_window']) {
+      const v = Actions.pickSealedVignette({
+        theme,
+        natureStyle: theme === 'nature_window' ? ['bokeh', 'mist', 'frost'][seed % 3] : 'bokeh',
+        rotationIndex: seed % 6,
+        sealedElapsedSec: 300,
+        sessionSeed: seed * 7919
+      });
+      assert.ok(v.message && v.message.length >= 8);
+      assert.ok(v.pose && v.pose.length >= 3);
+      seenSealed.add(v.message);
+      sources.add(v.source);
+    }
+  }
+  assert.ok(sources.has('curated') && sources.has('composed'), 'Blends both curated paired vignettes and composed slot-grammar lines');
+  assert.ok(seenSealed.size >= 45, 'Generates high diversity across sessions without repetition');
+
+  // Verify break action picker covers expanded poses and compositional phrases cleanly
+  const seenBreakMessages = new Set();
+  const seenPoses = new Set();
+  for (let i = 0; i < 80; i++) {
+    const act = Actions.pickBreakAction({ theme: i % 2 === 0 ? 'geometric' : 'sketch', breakKind: 'full', workedMinutes: 45 });
+    assert.ok(act.message && act.message.length >= 8);
+    assert.ok(act.pose);
+    seenBreakMessages.add(act.message);
+    seenPoses.add(act.pose);
+  }
+  assert.ok(seenBreakMessages.size >= 25);
+  assert.ok(seenPoses.size >= 8);
+});

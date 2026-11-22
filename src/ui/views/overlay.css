@@ -281,7 +281,11 @@ body {
   }
 }
 
-/* 1) Geometric: Giant Translucent Glass Depth Clock + Companion leaning beside digits */
+/* 1) Geometric: Giant Translucent Glass Depth Clock + Full-Screen Roaming Pebble */
+.sealed-stage[data-sealed-layout="glass_clock"] .sealed-hero {
+  padding-bottom: 15vh;
+}
+
 .sealed-stage[data-sealed-layout="glass_clock"] .sealed-clock {
   font-size: clamp(120px, 16.5vw, 236px);
   font-weight: 700;
@@ -305,9 +309,10 @@ body {
   height: 162px;
 }
 
-/* 2) Sketch: Bright Airy Paper-Printed Clock + Centered Living Puppy Stroll Line */
+/* 2) Sketch: Bright Airy Paper-Printed Clock + Full-Screen Roaming Sketch Puppy */
 .sealed-stage[data-sealed-layout="sketch_paper"] .sealed-hero {
-  gap: 6px;
+  gap: 8px;
+  padding-bottom: 15vh;
 }
 
 .sealed-stage[data-sealed-layout="sketch_paper"] .sealed-clock-wrap {
@@ -320,7 +325,7 @@ body {
   font-weight: 200;
   color: rgba(47, 46, 43, 0.22);
   letter-spacing: -0.02em;
-  margin-bottom: -14px;
+  margin-bottom: 14px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -497,12 +502,28 @@ body {
   opacity: 1;
 }
 
+/* Full-Screen 100vw x 100vh Causal Roaming Companion Canvas */
+.sealed-roaming-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 6;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+.sealed-roaming-canvas.active {
+  opacity: 1;
+}
+
 .sealed-wake-hint {
   position: fixed;
   bottom: 28px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 6;
+  z-index: 7;
   font-size: 12px;
   letter-spacing: 0.08em;
   color: var(--ink-faint);

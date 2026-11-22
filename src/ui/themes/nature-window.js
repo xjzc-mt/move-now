@@ -60,6 +60,13 @@
     let frostSeed = Math.floor(Math.random() * 100000);
     let lastDark = isDarkScheme();
 
+    // Organic random-yet-logical atmospheric breeze arc (swells gently every 26-44s, then calms)
+    let breezeElapsed = 0;
+    let breezeNextAt = 18 + Math.random() * 16;
+    let breezeDur = 14;
+    let breezeDir = Math.random() < 0.5 ? 1 : -1;
+    let breezeVelX = 0;
+
     function resize() {
       const rect = canvas.getBoundingClientRect();
       const nextW = Math.max(40, Math.round(rect.width || canvas.width || 300));
@@ -353,7 +360,7 @@
 
       for (let i = 0; i < bokehDiscs.length; i++) {
         const d = bokehDiscs[i];
-        d.x += d.vx * dtSec;
+        d.x += (d.vx + breezeVelX * d.depth * 22) * dtSec;
         d.y += d.vy * dtSec;
         if (d.x < -d.r) d.x = width + d.r;
         if (d.x > width + d.r) d.x = -d.r;
@@ -499,7 +506,7 @@
       // Soft drifting mist clouds
       const puffCount = compact ? 3 : 6;
       for (let i = 0; i < puffCount; i++) {
-        const px = width * (0.15 + (i / puffCount) * 0.70) + Math.sin(t * 0.28 + i * 1.7) * (compact ? 14 : 52);
+        const px = width * (0.15 + (i / puffCount) * 0.70) + Math.sin(t * 0.28 + i * 1.7) * (compact ? 14 : 52) + breezeVelX * (compact ? 10 : 48);
         const py = height * (0.22 + ((i * 37) % 100) / 165) + Math.cos(t * 0.22 + i) * (compact ? 10 : 34);
         const pr = (compact ? 36 : 210) + (i % 3) * (compact ? 12 : 70);
         const pg = ctx.createRadialGradient(px, py, 0, px, py, pr);
@@ -781,6 +788,22 @@
 
       const dtSec = Math.min(0.1, Math.max(0.008, (nowMs - lastFrameMs) / 1000));
       lastFrameMs = nowMs;
+
+      // Advance calm atmospheric breeze narrative envelope
+      breezeElapsed += dtSec;
+      if (breezeElapsed < breezeNextAt) {
+        breezeVelX = 0;
+      } else if (breezeElapsed < breezeNextAt + breezeDur) {
+        const prog = (breezeElapsed - breezeNextAt) / breezeDur;
+        // Smooth bell curve: 0 -> 1 -> 0 with zero jump
+        breezeVelX = breezeDir * Math.sin(prog * Math.PI);
+      } else {
+        breezeElapsed = 0;
+        breezeNextAt = 26 + Math.random() * 18;
+        breezeDur = 12 + Math.random() * 5;
+        breezeDir = Math.random() < 0.5 ? 1 : -1;
+        breezeVelX = 0;
+      }
 
       let thawFrac = 0;
       if (thawing) {

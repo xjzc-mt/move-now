@@ -94,9 +94,18 @@
   const sealedSketchLineEl = document.getElementById('sealedSketchLine');
   const sealedDividerEl = document.getElementById('sealedDivider');
   const sealedFrontCanvas = document.getElementById('sealedFrontCanvas');
+  const sealedRoamingCanvas = document.getElementById('sealedRoamingCanvas');
   const sealedMessageEl = document.getElementById('sealedMessage');
   const sealedWakeHintEl = document.getElementById('sealedWakeHint');
   const guardianStageEl = document.getElementById('guardianStage');
+
+  let roamingEngine = null;
+  function ensureRoamingEngine() {
+    if (!roamingEngine && sealedRoamingCanvas && window.MoveNowRoamingStage) {
+      roamingEngine = window.MoveNowRoamingStage.create(sealedRoamingCanvas);
+    }
+    return roamingEngine;
+  }
 
   let currentSealedLayout = 'glass_clock';
   let lastGuardianPose = '';
@@ -169,6 +178,10 @@
           frontCtx.fill();
         }
       }
+    }
+
+    if (roamingEngine) {
+      roamingEngine.update(nowMs);
     }
   }
 
@@ -254,12 +267,8 @@
   window.__moveNowStartThaw = function () {
     surfaces.fullscreen.classList.add('fading-out');
     surfaces.secondary.classList.add('fading-out');
-    if (guardianStage && currentPhase === 'sealed') {
-      if (currentTheme === 'geometric') {
-        guardianStage.setState({ theme: 'geometric', pose: 'guardian_wake', mood: 'refreshed' });
-      } else if (currentTheme === 'sketch') {
-        guardianStage.setState({ theme: 'sketch', pose: 'stretch_up', mood: 'refreshed' });
-      }
+    if (roamingEngine && currentPhase === 'sealed') {
+      roamingEngine.wakeReaction();
     }
     if (opticalEngine) {
       opticalEngine.startThaw();
@@ -357,7 +366,7 @@
           sealedStageRoot.setAttribute('data-sealed-layout', currentSealedLayout);
         }
         if (sealedSketchLineEl) {
-          sealedSketchLineEl.hidden = currentSealedLayout !== 'sketch_paper';
+          sealedSketchLineEl.hidden = true;
         }
         if (sealedDividerEl) {
           sealedDividerEl.hidden = currentSealedLayout !== 'editorial_wave';
@@ -380,25 +389,17 @@
         );
         sealedWakeHintEl.textContent = snapshot.sealedWakeHint || '轻触键鼠或任意键返回桌面';
 
+        guardianStageEl.hidden = true;
         if (currentTheme === 'geometric' || currentTheme === 'sketch') {
-          guardianStageEl.hidden = false;
-          const anchorPose = snapshot.sealedPose || (currentTheme === 'geometric' ? 'guardian' : 'nap_guard');
-          const anchorToken = currentTheme + ':' + String(snapshot.sealedRotationIndex || 0) + ':' + anchorPose;
-          if (anchorToken !== lastGuardianPose) {
-            lastGuardianPose = anchorToken;
-            ensureGuardianStage().setState({
-              theme: currentTheme,
-              autonomous: true,
-              anchorPose: anchorPose,
-              anchorToken: anchorToken,
-              pose: anchorPose,
-              mood: 'calm',
-              easterEgg: null
-            });
+          const rEng = ensureRoamingEngine();
+          if (rEng && sealedRoamingCanvas) {
+            sealedRoamingCanvas.classList.add('active');
+            rEng.setActive(true, currentTheme);
+            rEng.setTheme(currentTheme);
           }
         } else {
-          guardianStageEl.hidden = true;
-          lastGuardianPose = '';
+          if (sealedRoamingCanvas) sealedRoamingCanvas.classList.remove('active');
+          if (roamingEngine) roamingEngine.setActive(false);
         }
         startOpticalLoop();
         return;
@@ -408,6 +409,12 @@
       lastGuardianPose = '';
       if (sealedFrontCanvas) {
         sealedFrontCanvas.classList.remove('active');
+      }
+      if (sealedRoamingCanvas) {
+        sealedRoamingCanvas.classList.remove('active');
+      }
+      if (roamingEngine) {
+        roamingEngine.setActive(false);
       }
       currentDisplayedSealedMessage = '';
 

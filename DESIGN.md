@@ -183,5 +183,5 @@ flowchart TD
      - 可选的防休眠支持（默认关闭 `preventSleepDuringSeal = false`；仅当用户在二级偏好中手动开启时，才在封存期间按需调用 `IOPMAssertionCreateWithName` 并设安全超时上限）。
      - `NSWorkspace` 原焦点应用记录与无缝归还、系统睡眠/锁屏监听。
      - `CGDisplayIsInMirrorSet` 与全屏状态检测，实现投屏/演示静默避让。
-2. **跨平台表现层（模块化 HTML/CSS/Canvas/WebGL/SVG/JS）**：
-   - 完整封装三大主题的休息态与专属封存态渲染、10 分钟平滑文案轮换器、微动作库与设置状态机，后续同步 Windows（WebView2 + Acrylic/Mica）时可直接复用。
+2. **跨平台表现层（模块化 HTML/CSS/Canvas/SVG/JS）**：
+   - 完整封装三大主题的休息态与专属封存态渲染（含 `roaming-stage.js` 统一连续骨骼全屏 `100vw × 100vh` 因果叙事漫游引擎，彻底消除静态姿态切帧跳变，支持跨屏散步留印、追逐光点/墨蝶、仰望巨钟品茶、屏幕边缘探头与出画散步回返五大随机完整叙事 + 22–38s 宁静长眠留白）、10 分钟平滑文案轮换器、混合槽位语法微动作库与设置状态机，后续同步 Windows（WebView2 + Acrylic/Mica）时可直接复用。

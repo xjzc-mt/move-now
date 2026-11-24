@@ -13,7 +13,7 @@
     geometric: '已经连轴转 45 分钟了，先把肩膀放下来吧。',
     sketch: '眼睛累了吧，往窗外最远的地方看一会儿。',
     nature_window: {
-      bokeh: '把视线从屏幕挪开，让眼睛失焦一会儿。',
+      sunlight: '把窗边的晴光树影借来桌面，让视线歇一会儿。',
       mist: '桌面已为你暂时封存，放心去走走吧。',
       frost: '寒窗凝霜已遮蔽文字，回来轻触键鼠即刻解冻。'
     }
@@ -21,7 +21,7 @@
 
   let selectedTheme = 'geometric';
   let selectedMode = 'fullscreen_preview';
-  let selectedNature = 'bokeh';
+  let selectedNature = 'sunlight';
 
   const stage = window.MoveNowThemeStage.mount(stageEl, { showBreathLabel: true });
 
@@ -37,7 +37,7 @@
     const isNature = selectedTheme === 'nature_window';
     naturePillsBox.hidden = !isNature;
     if (isNature) {
-      sampleEl.textContent = SAMPLES.nature_window[selectedNature] || SAMPLES.nature_window.bokeh;
+      sampleEl.textContent = SAMPLES.nature_window[selectedNature] || SAMPLES.nature_window.sunlight;
     } else {
       sampleEl.textContent = SAMPLES[selectedTheme] || SAMPLES.geometric;
     }

@@ -10,7 +10,7 @@
   const DEFAULT_SETTINGS = {
     hasCompletedOnboarding: false,
     theme: 'geometric',              // 'geometric' | 'sketch' | 'nature_window'
-    natureStyle: 'auto',             // 'auto' | 'bokeh' | 'mist' | 'frost'
+    natureStyle: 'auto',             // 'auto' | 'sunlight' | 'mist' | 'frost'
     reminderMode: 'fullscreen_preview', // 'fullscreen_preview' | 'corner_card' | 'edge_glow'
     preAlertSeconds: 15,             // 10 | 15 | 30
     rhythmPreset: 'golden',          // 'golden' | 'dual' | 'custom'
@@ -43,8 +43,12 @@
     HANDS_OFF_KEY_RECENT_SEC: 1.2,
     HANDS_OFF_MOUSE_DELTA_PX: 28.0,
     AWAY_RETURN_IDLE_SEC: 8.0,
-    SEALED_ROTATION_SEC: 10 * 60,    // 10-minute gentle copy rotation in sealed mode
-    MAX_SLEEP_ASSERTION_SEC: 2 * 60 * 60, // 2-hour safety cap for IOPMAssertion
+    SEALED_ROTATION_SEC: 10 * 60,           // 10-minute gentle copy rotation in sealed mode
+    MAX_SLEEP_ASSERTION_SEC: 2 * 60 * 60,   // Stage-1 AC display & lock keep-awake cap (2h)
+    AC_SYSTEM_KEEP_AWAKE_SEC: 12 * 60 * 60, // Stage-2 AC background compute/agent cap (12h)
+    BATT_DISPLAY_KEEP_AWAKE_SEC: 25 * 60,   // Stage-1 Battery display & lock keep-awake cap (25m)
+    BATT_SYSTEM_KEEP_AWAKE_SEC: 90 * 60,    // Stage-2 Battery background compute cap (90m)
+    LOW_BATTERY_THRESHOLD_PCT: 20,          // Release assertions below 20% battery
     PREVIEW_BREAK_SEC: 15
   };
 
@@ -64,7 +68,11 @@
     if (!['geometric', 'sketch', 'nature_window'].includes(s.theme)) {
       s.theme = DEFAULT_SETTINGS.theme;
     }
-    if (!['auto', 'bokeh', 'mist', 'frost'].includes(s.natureStyle)) {
+    // Migrate legacy 'bokeh' cleanly to 'sunlight' (窗棂树影)
+    if (s.natureStyle === 'bokeh') {
+      s.natureStyle = 'sunlight';
+    }
+    if (!['auto', 'sunlight', 'mist', 'frost'].includes(s.natureStyle)) {
       s.natureStyle = DEFAULT_SETTINGS.natureStyle;
     }
     if (!['fullscreen_preview', 'corner_card', 'edge_glow'].includes(s.reminderMode)) {
@@ -134,7 +142,7 @@
       // Active break & Stage-2 Sealed Mode
       breakKind: 'full',
       presentationMode: 'fullscreen', // 'fullscreen' | 'corner_card' | 'edge_glow'
-      activeNatureStyle: 'bokeh',     // 'bokeh' | 'mist' | 'frost'
+      activeNatureStyle: 'sunlight',  // 'sunlight' | 'mist' | 'frost'
       natureAutoIndex: 0,
       breakDurationSec: 45,
       breakRemainingSec: 45,
@@ -154,10 +162,16 @@
       toastMessage: null,
       toastRemainingSec: 0,
 
-      // System environment flags
+      // System environment & power flags
       avoiding: false,
       avoidingReason: null,
       lockedOrAsleep: false,
+      onBattery: false,
+      batteryPercent: 100,
+      lowPowerMode: false,
+      awaySessionActive: false,
+      awayElapsedSec: 0,
+      lastKeepAwakeMode: 'none',
       clockSec: 0,
       lastInputSeenSec: 0,
       hoveringSnooze: false
@@ -245,7 +259,7 @@
         state.activeNatureStyle = settings.natureStyle;
         return state.activeNatureStyle;
       }
-      const cycle = ['bokeh', 'mist', 'frost'];
+      const cycle = ['sunlight', 'mist', 'frost'];
       if (advance) {
         state.activeNatureStyle = cycle[state.natureAutoIndex % cycle.length];
         state.natureAutoIndex += 1;
@@ -253,7 +267,40 @@
       return state.activeNatureStyle;
     }
 
+    function computeKeepAwakeMode() {
+      if (!settings.preventSleepDuringSeal || !state.awaySessionActive) {
+        return 'none';
+      }
+      if (state.lowPowerMode || (state.onBattery && state.batteryPercent < CONSTANTS.LOW_BATTERY_THRESHOLD_PCT)) {
+        return 'none';
+      }
+      const displayCap = state.onBattery
+        ? CONSTANTS.BATT_DISPLAY_KEEP_AWAKE_SEC
+        : CONSTANTS.MAX_SLEEP_ASSERTION_SEC;
+      const systemCap = state.onBattery
+        ? CONSTANTS.BATT_SYSTEM_KEEP_AWAKE_SEC
+        : CONSTANTS.AC_SYSTEM_KEEP_AWAKE_SEC;
+
+      if (state.phase === 'sealed' && !state.lockedOrAsleep && state.awayElapsedSec < displayCap) {
+        return 'display';
+      }
+      if (state.awayElapsedSec < systemCap) {
+        return 'system';
+      }
+      return 'none';
+    }
+
+    function syncKeepAwakeTransition(events) {
+      const nextMode = computeKeepAwakeMode();
+      if (state.lastKeepAwakeMode === 'display' && nextMode === 'system' && state.phase === 'sealed' && !state.lockedOrAsleep) {
+        events.push({ type: 'stage1_display_handover' });
+      }
+      state.lastKeepAwakeMode = nextMode;
+    }
+
     function enterResting(kind, isPreview, events) {
+      state.awaySessionActive = false;
+      state.awayElapsedSec = 0;
       state.phase = 'resting';
       state.breakKind = kind;
       state.isPreview = Boolean(isPreview);
@@ -321,7 +368,10 @@
         state.sealedElapsedSec = 0;
         state.sealedRotationIndex = 0;
         state.sealedSessionSeed = 1 + Math.floor(randomFn() * 999999);
+        state.awaySessionActive = true;
+        state.awayElapsedSec = 0;
         state.handsOffPaused = false;
+        syncKeepAwakeTransition(events);
         events.push({ type: 'enter_sealed_mode' });
         events.push({ type: 'update_overlay' });
         events.push({ type: 'state_changed' });
@@ -338,7 +388,12 @@
       state.escHintActive = false;
       state.sealedElapsedSec = 0;
       state.sealedRotationIndex = 0;
+      if (wakeSeal) {
+        state.awaySessionActive = false;
+        state.awayElapsedSec = 0;
+      }
       state.phase = 'waiting_activity';
+      syncKeepAwakeTransition(events);
       events.push({
         type: 'hide_overlay',
         restoreFocus: true,
@@ -363,7 +418,7 @@
      */
     function tick(sensor) {
       const s = sensor || {};
-      const dt = clampNumber(s.dtSec, 0.05, 60.0, 0.5);
+      const dt = clampNumber(s.dtSec, 0.05, 300.0, 0.5);
       state.clockSec += dt;
       const events = [];
 
@@ -386,6 +441,16 @@
       const mouseDelta = typeof s.mouseDeltaPx === 'number' ? s.mouseDeltaPx : 0;
       const hasRecentInput = minIdle < Math.max(dt + 2.0, 3.0) || mouseDelta >= 4;
 
+      state.onBattery = Boolean(s.onBattery);
+      state.batteryPercent = typeof s.batteryPercent === 'number'
+        ? clampNumber(s.batteryPercent, 0, 100, 100)
+        : 100;
+      state.lowPowerMode = Boolean(s.lowPowerMode);
+
+      if (state.awaySessionActive && !hasRecentInput) {
+        state.awayElapsedSec += dt;
+      }
+
       // Toast countdown
       if (state.toastRemainingSec > 0) {
         state.toastRemainingSec = Math.max(0, state.toastRemainingSec - dt);
@@ -403,7 +468,7 @@
         }
       }
 
-      // System lock / sleep reset
+      // System lock / sleep reset (preserves Stage-2 background compute assertion while locked away!)
       if (s.isLockedOrAsleep) {
         if (!state.lockedOrAsleep) {
           state.lockedOrAsleep = true;
@@ -416,12 +481,16 @@
         if (state.dndRemainingSec > 0) {
           state.dndRemainingSec = Math.max(0, state.dndRemainingSec - dt);
         }
+        syncKeepAwakeTransition(events);
         state.mood = computeMood();
         return getSnapshotWithEvents(events);
       } else if (state.lockedOrAsleep) {
         state.lockedOrAsleep = false;
+        state.awaySessionActive = false;
+        state.awayElapsedSec = 0;
         resetWorkTimers();
         state.phase = 'waiting_activity';
+        syncKeepAwakeTransition(events);
       }
 
       // Update avoidance flag (Mirroring / Fullscreen presentation)
@@ -463,6 +532,7 @@
             state.sealedRotationIndex = nextRot;
             events.push({ type: 'update_overlay' });
           }
+          syncKeepAwakeTransition(events);
         }
         state.mood = computeMood();
         return getSnapshotWithEvents(events);
@@ -826,6 +896,7 @@
         state.activeAction = picked;
         events.push({ type: 'update_overlay' });
       }
+      syncKeepAwakeTransition(events);
       events.push({ type: 'settings_updated', settings: Object.assign({}, settings) });
       events.push({ type: 'state_changed' });
       return getSnapshotWithEvents(events);
@@ -878,9 +949,8 @@
       const sealedStyle = settings.theme === 'geometric'
         ? 'warm_matte'
         : (settings.theme === 'sketch' ? 'vellum' : resolvedNatureStyle);
-      const keepAwakeActive = isSealed &&
-        settings.preventSleepDuringSeal &&
-        state.sealedElapsedSec < CONSTANTS.MAX_SLEEP_ASSERTION_SEC;
+      const keepAwakeMode = computeKeepAwakeMode();
+      const keepAwakeActive = keepAwakeMode !== 'none';
 
       const sealedBeat = isSealed
         ? Actions.pickSealedVignette({
@@ -930,6 +1000,7 @@
         sealedPose: sealedBeat ? sealedBeat.pose : null,
         sealedCopySource: sealedBeat ? sealedBeat.source : null,
         sealedWakeHint: isSealed ? Actions.SEALED_WAKE_HINT : null,
+        keepAwakeMode: keepAwakeMode,
         keepAwakeActive: keepAwakeActive,
         isPreview: state.isPreview,
         activeAction: state.activeAction,

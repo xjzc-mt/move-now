@@ -40,7 +40,7 @@
 
     stage.setState({
       theme: settings.theme,
-      natureStyle: settings.natureStyle === 'auto' ? (snapshot.activeNatureStyle || 'bokeh') : settings.natureStyle,
+      natureStyle: settings.natureStyle === 'auto' ? (snapshot.activeNatureStyle || 'sunlight') : settings.natureStyle,
       mood: snapshot.mood,
       pose: 'calm',
       easterEgg: null

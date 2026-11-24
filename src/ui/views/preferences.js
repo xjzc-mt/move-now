@@ -1,8 +1,12 @@
 (function () {
   'use strict';
 
+  const themeButtons = document.querySelectorAll('#themeGroup [data-theme-choice]');
+  const natureSubRow = document.getElementById('natureSubRow');
+  const natureStyleButtons = document.querySelectorAll('#natureStyleGroup [data-nature-style]');
   const rhythmButtons = document.querySelectorAll('#rhythmGroup [data-rhythm]');
   const customBox = document.getElementById('customDurationBox');
+  const customMetaText = document.getElementById('customMetaText');
   const customWorkInput = document.getElementById('customWorkInput');
   const customBreakInput = document.getElementById('customBreakInput');
   const modeButtons = document.querySelectorAll('#modeGroup [data-mode]');
@@ -14,6 +18,11 @@
   const previewBtn = document.getElementById('previewBtn');
   const quitBtn = document.getElementById('quitBtn');
 
+  const stageEl = document.getElementById('prefsThemeStage');
+  const miniStage = (stageEl && window.MoveNowThemeStage)
+    ? window.MoveNowThemeStage.mount(stageEl, { showBreathLabel: false, compact: true })
+    : null;
+
   let latestSettings = null;
 
   function render(snapshot) {
@@ -22,10 +31,35 @@
     latestSettings = s;
     document.documentElement.setAttribute('data-theme', s.theme);
 
+    if (miniStage) {
+      miniStage.setState({
+        theme: s.theme,
+        natureStyle: s.natureStyle === 'auto' ? (snapshot.activeNatureStyle || 'sunlight') : s.natureStyle,
+        pose: 'calm',
+        mood: snapshot.mood || 'calm'
+      });
+    }
+
+    themeButtons.forEach(function (btn) {
+      const active = btn.getAttribute('data-theme-choice') === s.theme;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-checked', active ? 'true' : 'false');
+    });
+
+    natureSubRow.hidden = s.theme !== 'nature_window';
+    natureStyleButtons.forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-nature-style') === (s.natureStyle || 'auto'));
+    });
+
     rhythmButtons.forEach(function (btn) {
       btn.classList.toggle('active', btn.getAttribute('data-rhythm') === s.rhythmPreset);
     });
     customBox.classList.toggle('visible', s.rhythmPreset === 'custom');
+    if (customMetaText) {
+      customMetaText.textContent = s.rhythmPreset === 'custom'
+        ? (s.customWorkMinutes + 'm 工作 · ' + s.customBreakSeconds + 's 放松')
+        : '自由设定间隔时长';
+    }
 
     if (document.activeElement !== customWorkInput) {
       customWorkInput.value = s.customWorkMinutes;
@@ -38,7 +72,7 @@
       btn.classList.toggle('active', btn.getAttribute('data-mode') === s.reminderMode);
     });
     const preSec = s.preAlertSeconds || 15;
-    previewModeTitle.textContent = preSec + 's 预告 + 全屏';
+    previewModeTitle.textContent = preSec + 's 预告全屏';
     preAlertRow.classList.toggle('visible', s.reminderMode === 'fullscreen_preview');
     preAlertButtons.forEach(function (btn) {
       btn.classList.toggle('active', Number(btn.getAttribute('data-pre-alert')) === preSec);
@@ -53,6 +87,22 @@
       row.setAttribute('aria-checked', s[key] ? 'true' : 'false');
     });
   }
+
+  themeButtons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      window.MoveNowBridge.send('updateSettings', {
+        theme: btn.getAttribute('data-theme-choice')
+      });
+    });
+  });
+
+  natureStyleButtons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      window.MoveNowBridge.send('updateSettings', {
+        natureStyle: btn.getAttribute('data-nature-style')
+      });
+    });
+  });
 
   rhythmButtons.forEach(function (btn) {
     btn.addEventListener('click', function () {

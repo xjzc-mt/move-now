@@ -26,6 +26,13 @@
       '  </defs>' +
       '  <ellipse class="geo-shadow" cx="130" cy="194" rx="56" ry="10.5" fill="currentColor" opacity="0.08" />' +
       '  <circle class="geo-aura" cx="130" cy="118" r="72" fill="var(--halo-primary)" filter="url(#' + filterId + ')" />' +
+      '  <!-- Geometric-exclusive concentric Zen breath & levitation rings -->' +
+      '  <circle class="geo-zen-ring" cx="130" cy="118" r="82" fill="none" stroke="var(--accent)" stroke-width="1.4" opacity="0" />' +
+      '  <ellipse class="geo-levitate-halo" cx="130" cy="34" rx="22" ry="6" fill="none" stroke="var(--accent-secondary, var(--accent))" stroke-width="2" opacity="0" />' +
+      '  <g class="geo-feet-group" opacity="0">' +
+      '    <ellipse class="geo-foot-l" cx="110" cy="189" rx="11" ry="6.5" fill="var(--accent)" />' +
+      '    <ellipse class="geo-foot-r" cx="150" cy="189" rx="11" ry="6.5" fill="var(--accent)" />' +
+      '  </g>' +
       '  <!-- Floating inspiration dust mote (tracked by eyes & head in mote_track) -->' +
       '  <g class="geo-mote-group" opacity="0">' +
       '    <circle class="geo-mote-halo" cx="130" cy="54" r="9" fill="var(--accent)" opacity="0.22" />' +
@@ -70,6 +77,11 @@
     const bodyGroup = container.querySelector('.geo-body-group');
     const shadow = container.querySelector('.geo-shadow');
     const aura = container.querySelector('.geo-aura');
+    const zenRing = container.querySelector('.geo-zen-ring');
+    const levitateHalo = container.querySelector('.geo-levitate-halo');
+    const feetGroup = container.querySelector('.geo-feet-group');
+    const footL = container.querySelector('.geo-foot-l');
+    const footR = container.querySelector('.geo-foot-r');
     const moteGroup = container.querySelector('.geo-mote-group');
     const moteHalo = container.querySelector('.geo-mote-halo');
     const moteDot = container.querySelector('.geo-mote-dot');
@@ -99,6 +111,7 @@
     const spGazeY = makeSpring(0, 26, 8.5);
     const spCup = makeSpring(0, 14, 6.5);
     const spMote = makeSpring(0, 10, 5.5);
+    const spStandFeet = makeSpring(0, 12, 6.2);
 
     // Modular Left & Right Arm control points [cx1, cy1, ex, ey]
     const spArmL = [makeSpring(56, 20, 7.5), makeSpring(136, 20, 7.5), makeSpring(68, 20, 7.5), makeSpring(166, 20, 7.5)];
@@ -262,67 +275,143 @@
         armL = [72, 98 + rub, 108, 106];
         armR = [188, 98 - rub, 152, 106];
         targetY = -2.0;
+      } else if (activePose === 'temple_rub') {
+        const rub = Math.sin(t * 2.6) * 4.5;
+        armL = [46, 96 + rub, 74, 86 + rub * 0.5];
+        armR = [214, 96 - rub, 186, 86 - rub * 0.5];
+        targetY = -2.5;
+      } else if (activePose === 'hug_self') {
+        // Warmly crossing arms over opposite shoulders with gentle slow sway
+        const sway = Math.sin(t * 0.95) * 4.2;
+        targetRot = sway;
+        targetSX = 0.97 + b * 0.025;
+        armL = [78, 124, 146, 118];
+        armR = [182, 130, 114, 124];
       } else if (activePose === 'cheek_rest') {
-        targetRot = 5.2 + Math.sin(t * 0.5) * 1.2;
-        targetGX = 2.8;
+        targetRot = 6.5 + Math.sin(t * 0.55) * 1.6;
+        targetGX = 3.2;
         targetGY = -1.5;
-        // Right hand propped up under right cheek, left hand relaxed!
         armL = [58, 142, 72, 168];
-        armR = [208, 134, 176, 126];
-      } else if (activePose === 'asym_stretch') {
-        const lift = b * 10;
-        targetRot = -asymSide * (5.5 + b * 2.5);
-        targetSY = 1.03 + b * 0.045;
+        armR = [210, 132, 174, 124];
+      } else if (activePose === 'asym_stretch' || activePose === 'side_bend_l' || activePose === 'side_bend_r') {
+        const side = activePose === 'side_bend_l' ? 1 : (activePose === 'side_bend_r' ? -1 : asymSide);
+        const lift = 6 + b * 11;
+        targetRot = -side * (11.5 + b * 3.5);
+        targetX = -side * 10;
+        targetY = -8 - b * 4;
+        targetSY = 1.04 + b * 0.045;
         targetGY = -2.8;
-        if (asymSide > 0) {
-          armL = [56, 82 - lift, 96, 34 - lift * 0.5];
-          armR = [204, 140, 188, 166];
+        if (side > 0) {
+          // Right arm arches overhead toward the left!
+          armL = [54, 142, 74, 166];
+          armR = [212, 64 - lift, 118, 26 - lift * 0.5];
         } else {
-          armL = [56, 140, 72, 166];
-          armR = [204, 82 - lift, 164, 34 - lift * 0.5];
+          // Left arm arches overhead toward the right!
+          armL = [48, 64 - lift, 142, 26 - lift * 0.5];
+          armR = [206, 142, 186, 166];
         }
+      } else if (activePose === 'arm_circle') {
+        // Wide, meditative 360-degree halo sweep around torso
+        const ang = (t * 0.78) % (Math.PI * 2);
+        const up = -Math.cos(ang); // -1 at bottom -> +1 overhead -> -1 at bottom
+        const out = Math.sin(ang);
+        const reachY = 108 - up * 74;
+        const spreadX = 38 + Math.abs(out) * 32;
+        targetY = -6 - Math.max(0, up) * 7;
+        targetSY = 1.02 + Math.max(0, up) * 0.045;
+        targetGY = -Math.max(0, up) * 3.2;
+        armL = [68 - spreadX, reachY + 12, 102 - Math.abs(out) * 44, reachY];
+        armR = [192 + spreadX, reachY + 12, 158 + Math.abs(out) * 44, reachY];
       } else if (activePose === 'lean_back') {
-        targetRot = -3.0 - b * 2.0;
-        targetGY = -3.2;
-        armL = [56, 98, 86, 86];
-        armR = [204, 98, 174, 86];
+        targetRot = -5.5 - b * 3.2;
+        targetY = 2 - b * 3.5;
+        targetSY = 0.98 + b * 0.03;
+        targetGY = -4.5;
+        armL = [48, 90, 92, 78];
+        armR = [212, 90, 168, 78];
       } else if (activePose === 'chest_open') {
-        const open = b * 8;
-        armL = [50 - open, 122, 58 - open * 0.5, 156];
-        armR = [210 + open, 122, 202 + open * 0.5, 156];
+        const open = 6 + b * 12;
+        targetY = -4 - b * 4;
+        targetSX = 1.04 + b * 0.03;
+        targetGY = -2.2;
+        armL = [40 - open, 120, 52 - open * 0.6, 158];
+        armR = [220 + open, 120, 208 + open * 0.6, 158];
       } else if (activePose === 'stretch_up' || activePose === 'play_bow') {
-        const lift = b * 12;
-        targetSY = 1.03 + b * 0.058;
-        targetSX = 0.98 - b * 0.024;
-        targetY = -b * 8.5;
-        targetGY = -3.4;
-        armL = [58, 80 - lift, 102, 34 - lift * 0.5];
-        armR = [202, 80 - lift, 158, 34 - lift * 0.5];
+        const lift = 8 + b * 14;
+        targetSY = 1.05 + b * 0.065;
+        targetSX = 0.96 - b * 0.025;
+        targetY = -10 - b * 9;
+        targetGY = -4.0;
+        armL = [54, 72 - lift, 106, 24 - lift * 0.5];
+        armR = [206, 72 - lift, 154, 24 - lift * 0.5];
+      } else if (activePose === 'table_bow') {
+        // Gentle standing spinal lengthening bow (arms reaching forward horizontally, spine flat & calm)
+        const reach = 6 + b * 8;
+        targetX = -14;
+        targetY = -6 + b * 2;
+        targetRot = 12 + b * 2.5;
+        targetSX = 1.05;
+        targetSY = 0.95;
+        targetGX = 5.5;
+        targetGY = 2.0;
+        armL = [108, 118, 198 + reach, 112];
+        armR = [148, 124, 214 + reach, 118];
+      } else if (activePose === 'torso_twist_r' || activePose === 'torso_twist_l') {
+        const dir = activePose === 'torso_twist_r' ? 1 : -1;
+        const pulse = 0.75 + 0.25 * b;
+        targetGX = dir * 9.5 * pulse;
+        targetGY = -1.0;
+        targetX = dir * 6 * pulse;
+        targetRot = dir * 4.5 * pulse;
+        targetSX = 0.95;
+        if (dir > 0) {
+          armL = [88, 134, 168, 138];
+          armR = [214, 128, 198, 158];
+        } else {
+          armL = [46, 128, 62, 158];
+          armR = [172, 134, 92, 138];
+        }
+      } else if (activePose === 'tiptoe_lift') {
+        // Geometric Spirit anti-gravity hover: floats smoothly upward into weightless equilibrium!
+        const rise = Math.pow(0.5 - 0.5 * Math.cos(t * 1.35), 1.3);
+        targetY = -12 - rise * 22;
+        targetSY = 1.03 + rise * 0.045;
+        targetGY = -rise * 3.0;
+        armL = [48, 128 - rise * 10, 62, 148 - rise * 8];
+        armR = [212, 128 - rise * 10, 198, 148 - rise * 8];
       } else if (activePose === 'wrist_shake') {
-        const w1 = Math.sin(t * 9.2) * 7;
-        armL = [48, 112, 50 + w1, 88];
-        armR = [212, 112, 210 - w1, 88];
+        // Soft-body elastic ripple wave through floating hands
+        const w1 = Math.sin(t * 5.2) * 12;
+        const w2 = Math.cos(t * 5.2) * 8;
+        armL = [42, 106 + w2, 46 + w1, 80 - w2];
+        armR = [218, 106 - w2, 214 - w1, 80 + w2];
       } else if (activePose === 'shoulder_roll') {
-        const ang = t * 1.5;
-        const rx = Math.cos(ang) * 6;
-        const ry = Math.sin(ang) * 8;
-        targetY = -ry * 0.5;
-        armL = [56 + rx, 132 + ry, 70, 166];
-        armR = [204 - rx, 132 + ry, 190, 166];
-      } else if (activePose === 'neck_tilt') {
-        targetRot = Math.sin(t * 0.72) * 8.8;
-        targetGX = Math.sin(t * 0.72) * 3.2;
+        const ang = t * 1.55;
+        const rx = Math.cos(ang) * 9;
+        const ry = Math.sin(ang) * 11;
+        targetY = -4 - ry * 0.55;
+        armL = [52 + rx, 128 + ry, 68, 164 + ry * 0.5];
+        armR = [208 - rx, 128 + ry, 192, 164 + ry * 0.5];
+      } else if (activePose === 'neck_tilt' || activePose === 'neck_tilt_l' || activePose === 'neck_tilt_r') {
+        const tiltDir = activePose === 'neck_tilt_l' ? -1 : (activePose === 'neck_tilt_r' ? 1 : Math.sin(t * 0.72));
+        const softWave = (activePose === 'neck_tilt_l' || activePose === 'neck_tilt_r') ? (0.85 + 0.15 * b) : 1;
+        targetRot = tiltDir * 13.5 * softWave;
+        targetGX = tiltDir * 4.5 * softWave;
+        targetX = tiltDir * 4;
       } else if (activePose === 'gaze') {
-        targetGX = Math.sin(t * 0.45) * 5.8 + 2.8;
-        targetGY = -2.0;
+        targetGX = Math.sin(t * 0.45) * 6.5 + 3.2;
+        targetGY = -2.8;
+        targetY = -4 - b * 3.5;
       } else if (activePose === 'walk' || activePose === 'sniff') {
-        const step = Math.sin(t * 3.4);
-        targetX = (state.autonomous ? strollTargetX : 0) + Math.sin(t * 1.3) * 18;
-        targetY = -Math.abs(step) * 6.5;
-        targetRot = step * 3.8;
-        armL = [56, 136 + step * 11, 70, 164 + step * 7];
-        armR = [204, 136 - step * 11, 190, 164 - step * 7];
+        const step = Math.sin(t * 2.8);
+        targetX = (state.autonomous ? strollTargetX : 0) + Math.sin(t * 1.15) * 24;
+        targetY = -8 - Math.abs(step) * 7.5;
+        targetRot = step * 4.2;
+        armL = [54, 134 + step * 13, 68, 162 + step * 9];
+        armR = [206, 134 - step * 13, 192, 162 - step * 9];
       }
+
+      const showStandingFeet = ['walk', 'sniff', 'table_bow', 'side_bend_l', 'side_bend_r'].includes(activePose) ? 1 : 0;
 
       if (targetCup > 0.5) {
         armL = [82, 146, 116, 148];
@@ -343,6 +432,7 @@
       spGazeY.target = targetGY;
       spCup.target = targetCup;
       spMote.target = targetMote;
+      spStandFeet.target = showStandingFeet;
       setArmTargets(armL, armR);
 
       const px = stepSpring(spPosX, dt);
@@ -354,6 +444,20 @@
       const gy = stepSpring(spGazeY, dt);
       const cupVal = Math.max(0, Math.min(1, stepSpring(spCup, dt)));
       const moteVal = Math.max(0, Math.min(1, stepSpring(spMote, dt)));
+      const feetVal = Math.max(0, Math.min(1, stepSpring(spStandFeet, dt)));
+
+      if (feetGroup) {
+        feetGroup.setAttribute('opacity', feetVal.toFixed(2));
+        if (feetVal > 0.04) {
+          const walkStep = (activePose === 'walk' || activePose === 'sniff') ? Math.sin(t * 2.8) * 7 : 0;
+          footL.setAttribute('cx', (110 + px * 0.92 + walkStep).toFixed(1));
+          footR.setAttribute('cx', (150 + px * 0.92 - walkStep).toFixed(1));
+          const footLiftL = (activePose === 'walk' ? Math.max(0, Math.cos(t * 2.8)) * 4 : 0);
+          const footLiftR = (activePose === 'walk' ? Math.max(0, -Math.cos(t * 2.8)) * 4 : 0);
+          footL.setAttribute('cy', (189 - footLiftL).toFixed(1));
+          footR.setAttribute('cy', (189 - footLiftR).toFixed(1));
+        }
+      }
 
       const l0 = stepSpring(spArmL[0], dt), l1 = stepSpring(spArmL[1], dt), l2 = stepSpring(spArmL[2], dt), l3 = stepSpring(spArmL[3], dt);
       const r0 = stepSpring(spArmR[0], dt), r1 = stepSpring(spArmR[1], dt), r2 = stepSpring(spArmR[2], dt), r3 = stepSpring(spArmR[3], dt);
@@ -368,6 +472,17 @@
       shadow.setAttribute('rx', Math.max(42, 56 + py * 0.6).toFixed(1));
       aura.setAttribute('cx', (130 + px * 0.6).toFixed(1));
       aura.setAttribute('r', (68 + b * 12 * amp).toFixed(1));
+
+      if (zenRing) {
+        const showZen = (activePose === 'breath' || activePose === 'hug_self' || activePose === 'arm_circle');
+        zenRing.setAttribute('opacity', showZen ? (0.14 + b * 0.22).toFixed(2) : '0');
+        zenRing.setAttribute('r', (74 + b * 24).toFixed(1));
+      }
+      if (levitateHalo) {
+        const showCrown = (activePose === 'tiptoe_lift' || activePose === 'stretch_up');
+        levitateHalo.setAttribute('opacity', showCrown ? (0.28 + b * 0.28).toFixed(2) : '0');
+        levitateHalo.setAttribute('cy', (34 + py * 0.85 - b * 4).toFixed(1));
+      }
 
       moteGroup.setAttribute('opacity', moteVal.toFixed(2));
       cup.setAttribute('opacity', cupVal.toFixed(2));

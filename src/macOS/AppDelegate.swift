@@ -31,22 +31,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WebBridgeDelegate {
     private var activityMonitor: ActivityMonitor!
     private var engineHost: EngineHost!
     private var overlayController: OverlayController!
-    private var tickTimer: Timer?
+    private var tickTimer: DispatchSourceTimer?
     private var hotKeyRef: EventHotKeyRef?
     private var activityAssertion: NSObjectProtocol?
     private var sleepAssertionID: IOPMAssertionID?
+    private var sleepAssertionMode: String = "none"
 
     private var lastDndState: Bool = false
     private var lastAvoidingState: Bool = false
     private var lastLoggedPhase: String = ""
     private var lastLoggedAvoiding: Bool = false
+    private var lastLoggedAvoidingApp: String = ""
     private var lastLoggedLocked: Bool = false
+    private var lastLoggedDnd: Bool = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
-        // Prevent macOS App Nap from coalescing our rhythm timer into multi-minute intervals
+        // Prevent macOS App Nap & timer coalescing while still allowing idle system sleep
         activityAssertion = ProcessInfo.processInfo.beginActivity(
-            options: [.userInitiatedAllowingIdleSystemSleep],
+            options: [.userInitiatedAllowingIdleSystemSleep, .latencyCritical],
             reason: "Keep MoveNow break rhythm timer accurate"
         )
         appendLog("launch")
@@ -75,6 +78,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WebBridgeDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        tickTimer?.cancel()
+        tickTimer = nil
         releaseSleepAssertion()
     }
 
@@ -193,7 +198,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WebBridgeDelegate {
             return
         }
 
-        let rect = NSRect(x: 0, y: 0, width: 540, height: 620)
+        let rect = NSRect(x: 0, y: 0, width: 520, height: 664)
         let win = NSWindow(
             contentRect: rect,
             styleMask: [.titled, .closable, .fullSizeContentView],
@@ -230,14 +235,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WebBridgeDelegate {
     // MARK: - Tick Loop & Engine Events
 
     private func startTickLoop() {
-        tickTimer?.invalidate()
-        let timer = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
-            Task { @MainActor in
+        tickTimer?.cancel()
+        let timer = DispatchSource.makeTimerSource(flags: .strict, queue: .main)
+        timer.schedule(
+            deadline: .now() + .milliseconds(500),
+            repeating: .milliseconds(500),
+            leeway: .milliseconds(50)
+        )
+        timer.setEventHandler { [weak self] in
+            MainActor.assumeIsolated {
                 self?.performTick()
             }
         }
-        timer.tolerance = 0.08
-        RunLoop.main.add(timer, forMode: .common)
+        timer.resume()
         tickTimer = timer
     }
 
@@ -252,12 +262,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WebBridgeDelegate {
         let phase = snapshot["phase"] as? String ?? "unknown"
         let avoiding = snapshot["avoiding"] as? Bool ?? false
         let reason = snapshot["avoidingReason"] as? String ?? "none"
+        let avoidingApp = sensor.avoidingApp ?? ""
+        let dnd = snapshot["dndActive"] as? Bool ?? false
         let elapsed = Int((snapshot["workElapsedSec"] as? Double) ?? 0)
-        if phase != lastLoggedPhase || avoiding != lastLoggedAvoiding || sensor.isLockedOrAsleep != lastLoggedLocked {
+        let coalescedJump = sensor.dtSec >= 10.0
+
+        if phase != lastLoggedPhase ||
+            avoiding != lastLoggedAvoiding ||
+            avoidingApp != lastLoggedAvoidingApp ||
+            sensor.isLockedOrAsleep != lastLoggedLocked ||
+            dnd != lastLoggedDnd ||
+            coalescedJump {
             lastLoggedPhase = phase
             lastLoggedAvoiding = avoiding
+            lastLoggedAvoidingApp = avoidingApp
             lastLoggedLocked = sensor.isLockedOrAsleep
-            appendLog("phase=\(phase) elapsed=\(elapsed)s avoiding=\(avoiding)(\(reason)) locked=\(sensor.isLockedOrAsleep) keyIdle=\(Int(sensor.secondsSinceLastKey))s mouseIdle=\(Int(sensor.secondsSinceLastMouse))s")
+            lastLoggedDnd = dnd
+            let appDetail = avoidingApp.isEmpty ? reason : "\(reason):\(avoidingApp)"
+            let dtNote = coalescedJump ? String(format: " dt=%.1fs", sensor.dtSec) : ""
+            appendLog("phase=\(phase) elapsed=\(elapsed)s dnd=\(dnd) avoiding=\(avoiding)(\(appDetail)) locked=\(sensor.isLockedOrAsleep) keyIdle=\(Int(sensor.secondsSinceLastKey))s mouseIdle=\(Int(sensor.secondsSinceLastMouse))s\(dtNote)")
         }
     }
 
@@ -282,6 +305,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WebBridgeDelegate {
     }
 
     private func processEngineResult(_ result: EngineStepResult) {
+        var shouldHandoverDisplay = false
         for event in result.events {
             switch event.type {
             case "hide_overlay":
@@ -291,13 +315,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WebBridgeDelegate {
                 overlayController.hideAll(restoreFocus: restore, peakEndFade: fade, thawFrost: wakeSeal)
             case "play_gentle_chime":
                 playGentleChime()
+            case "stage1_display_handover":
+                shouldHandoverDisplay = true
             default:
                 break
             }
         }
 
-        let keepAwake = result.snapshot["keepAwakeActive"] as? Bool ?? false
-        syncSleepAssertion(shouldPrevent: keepAwake)
+        let keepAwakeMode: String
+        if let mode = result.snapshot["keepAwakeMode"] as? String {
+            keepAwakeMode = mode
+        } else {
+            keepAwakeMode = (result.snapshot["keepAwakeActive"] as? Bool == true) ? "display" : "none"
+        }
+        syncSleepAssertion(mode: keepAwakeMode)
+        if shouldHandoverDisplay {
+            requestPoliteDisplaySleepIfUncontested()
+        }
 
         overlayController.update(snapshot: result.snapshot, snapshotJSON: result.snapshotJSON)
 
@@ -445,34 +479,62 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WebBridgeDelegate {
         )
     }
 
-    // MARK: - Optional Sealed Keep-Awake (Default OFF; max 2h cap enforced by engine)
+    // MARK: - Adaptive Two-Stage Sealed Keep-Awake (Default OFF; Power & Co-App Aware)
 
-    private func syncSleepAssertion(shouldPrevent: Bool) {
-        if shouldPrevent {
-            if sleepAssertionID == nil {
-                var id: IOPMAssertionID = 0
-                let res = IOPMAssertionCreateWithName(
-                    kIOPMAssertionTypePreventUserIdleSystemSleep as CFString,
-                    IOPMAssertionLevel(kIOPMAssertionLevelOn),
-                    "MoveNow sealed mode background task keep-awake" as CFString,
-                    &id
-                )
-                if res == kIOReturnSuccess {
-                    sleepAssertionID = id
-                    appendLog("sleepAssertion=acquired")
-                }
-            }
-        } else {
-            releaseSleepAssertion()
+    private func syncSleepAssertion(mode: String) {
+        let normalized = (mode == "display" || mode == "system") ? mode : "none"
+        if normalized == sleepAssertionMode {
+            return
+        }
+        releaseSleepAssertion()
+        guard normalized != "none" else { return }
+
+        let assertionType: CFString = (normalized == "display")
+            ? (kIOPMAssertionTypePreventUserIdleDisplaySleep as CFString)
+            : (kIOPMAssertionTypePreventUserIdleSystemSleep as CFString)
+        let reason: CFString = (normalized == "display")
+            ? ("MoveNow stage-1 sealed display & lock keep-awake" as CFString)
+            : ("MoveNow stage-2 background agent & task keep-awake" as CFString)
+
+        var id: IOPMAssertionID = 0
+        let res = IOPMAssertionCreateWithName(
+            assertionType,
+            IOPMAssertionLevel(kIOPMAssertionLevelOn),
+            reason,
+            &id
+        )
+        if res == kIOReturnSuccess {
+            sleepAssertionID = id
+            sleepAssertionMode = normalized
+            appendLog("sleepAssertion=acquired(\(normalized))")
         }
     }
 
     private func releaseSleepAssertion() {
         if let id = sleepAssertionID {
+            let prevMode = sleepAssertionMode
             IOPMAssertionRelease(id)
             sleepAssertionID = nil
-            appendLog("sleepAssertion=released")
+            sleepAssertionMode = "none"
+            appendLog("sleepAssertion=released(\(prevMode))")
         }
+    }
+
+    private func requestPoliteDisplaySleepIfUncontested() {
+        var statusUnmanaged: Unmanaged<CFDictionary>?
+        if IOPMCopyAssertionsStatus(&statusUnmanaged) == kIOReturnSuccess,
+           let dict = statusUnmanaged?.takeRetainedValue() as? [String: Any] {
+            let activeDisplayAssertions = (dict[kIOPMAssertionTypePreventUserIdleDisplaySleep as String] as? NSNumber)?.intValue ?? 0
+            if activeDisplayAssertions > 0 {
+                appendLog("stage1Handover=deferred(otherDisplayAssertions=\(activeDisplayAssertions))")
+                return
+            }
+        }
+        let wrangler = IORegistryEntryFromPath(kIOMainPortDefault, "IOService:/IOResources/IODisplayWrangler")
+        guard wrangler != MACH_PORT_NULL else { return }
+        defer { IOObjectRelease(wrangler) }
+        IORegistryEntrySetCFProperty(wrangler, "IORequestIdle" as CFString, kCFBooleanTrue)
+        appendLog("stage1Handover=politeDisplaySleep")
     }
 
     // MARK: - Quiet Chime & Template Status Icon
@@ -493,13 +555,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WebBridgeDelegate {
         lastDndState = dnd
         lastAvoidingState = avoiding
         statusItem.button?.image = drawStatusIcon(dnd: dnd, avoiding: avoiding)
+        if dnd {
+            statusItem.button?.toolTip = "MoveNow · 免打扰中"
+        } else if avoiding {
+            statusItem.button?.toolTip = "MoveNow · 全屏/投屏静默避让中"
+        } else {
+            statusItem.button?.toolTip = "MoveNow · 动一下"
+        }
     }
 
     private func drawStatusIcon(dnd: Bool, avoiding: Bool) -> NSImage {
         let size = NSSize(width: 18, height: 18)
         let image = NSImage(size: size, flipped: false) { _ in
             let muted = dnd || avoiding
-            let color = NSColor.black.withAlphaComponent(muted ? 0.50 : 0.94)
+            let color = NSColor.black.withAlphaComponent(muted ? 0.48 : 0.94)
             color.setStroke()
             color.setFill()
 
@@ -544,6 +613,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WebBridgeDelegate {
             torso.lineWidth = 1.75
             torso.lineCapStyle = .round
             torso.stroke()
+
+            // Clear visual indicator so DND / avoidance never looks like a silently broken timer
+            if dnd {
+                NSColor.black.withAlphaComponent(0.88).setStroke()
+                let slash = NSBezierPath()
+                slash.move(to: NSPoint(x: 3.4, y: 3.4))
+                slash.line(to: NSPoint(x: 14.6, y: 14.6))
+                slash.lineWidth = 1.5
+                slash.lineCapStyle = .round
+                slash.stroke()
+            } else if avoiding {
+                NSColor.black.withAlphaComponent(0.85).setFill()
+                NSBezierPath(ovalIn: NSRect(x: 13.4, y: 13.0, width: 3.0, height: 3.0)).fill()
+            }
 
             return true
         }

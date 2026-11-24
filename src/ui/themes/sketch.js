@@ -2,7 +2,7 @@
   'use strict';
 
   function makeSpring(initial, k, c) {
-    return { x: initial, v: 0, target: initial, k: k || 16, c: c || 7.0 };
+    return { x: initial, v: 0, target: initial, k: k || 15, c: c || 7.0 };
   }
 
   function stepSpring(s, dt) {
@@ -11,123 +11,133 @@
     return s.x;
   }
 
+  /**
+   * MoveNow v0.1.0 Minimalist Ink-Sketch Puppy (`sketch.js`)
+   * - Preserves the original ultra-clean single-stroke `简笔画` soul:
+   *   `var(--sketch-stroke)` + `var(--sketch-paper)` + single-line ears, tail, and limbs,
+   *   simple dot eyes & dot nose — ZERO visual clutter or sticker pressure.
+   * - Eliminates the old front-facing big pot-belly:
+   *   Stretches/bends/twists use airy side-profile puppy sketches, and seated poses use a
+   *   petite, narrow, open-bottomed little puppy silhouette (`24px` wide under a `42px` head).
+   */
   function createSketchRenderer(container) {
     container.innerHTML =
       '<svg class="mn-sketch-svg" viewBox="0 0 280 224" width="100%" height="100%" aria-hidden="true" style="overflow: visible;">' +
       '  <!-- Quiet ground line -->' +
-      '  <path d="M46 178 Q140 181 234 178" fill="none" stroke="var(--sketch-stroke)" stroke-width="2" stroke-linecap="round" opacity="0.22" />' +
-      '  <!-- Minimalist fluttering paper-speck / butterfly (for butterfly watch behavior) -->' +
+      '  <path d="M56 176 Q140 178.5 224 176" fill="none" stroke="var(--sketch-stroke)" stroke-width="1.8" stroke-linecap="round" opacity="0.20" />' +
+      '  <!-- Minimalist fluttering 2-stroke ink butterfly -->' +
       '  <g class="sk-fly-group" opacity="0" style="transition: opacity 0.4s ease;">' +
       '    <path class="sk-fly-wings" d="M0 0 Q-5 -6 -8 -1 M0 0 Q5 -6 8 -1" fill="none" stroke="var(--sketch-stroke)" stroke-width="1.8" stroke-linecap="round" />' +
       '  </g>' +
-      '  <g class="sk-stage-mover">' +
-      '    <!-- Pose A: Unhurried stretch & play_bow -->' +
-      '    <g class="sk-pose-stretch" style="transition: opacity 0.42s ease;">' +
-      '      <g class="sk-stretch-body" style="transform-origin: 140px 172px;">' +
-      '        <path class="sk-tail-stretch" d="M94 140 Q76 124 82 110" fill="none" stroke="var(--sketch-stroke)" stroke-width="3" stroke-linecap="round" />' +
-      '        <path d="M94 142 C104 116, 136 118, 158 136 C166 143, 172 145, 178 142" fill="none" stroke="var(--sketch-stroke)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />' +
-      '        <path d="M94 142 C92 158, 96 170, 96 176 M108 154 L108 176 M120 154 C134 156, 148 158, 160 160" fill="none" stroke="var(--sketch-stroke)" stroke-width="3" stroke-linecap="round" />' +
-      '        <path d="M160 160 C176 170, 194 174, 204 174" fill="none" stroke="var(--sketch-stroke)" stroke-width="3" stroke-linecap="round" />' +
-      '        <circle cx="178" cy="120" r="19" fill="var(--sketch-paper)" stroke="var(--sketch-stroke)" stroke-width="3" />' +
-      '        <path d="M165 109 C156 114, 156 128, 164 130" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.8" stroke-linecap="round" />' +
-      '        <circle class="sk-eye-a" cx="184" cy="117" r="2.1" fill="var(--sketch-stroke)" />' +
-      '        <circle cx="196" cy="121" r="2.4" fill="var(--sketch-stroke)" />' +
-      '        <circle cx="185" cy="125" r="3.4" fill="var(--accent)" opacity="0.38" />' +
+      '  <g class="sk-stage-mover" style="transform-origin: 140px 174px;">' +
+      '    <!-- Pose A: Minimalist open-line side stretch / play-bow / perk-up (ZERO big belly!) -->' +
+      '    <g class="sk-pose-stretch" style="transition: opacity 0.36s ease;">' +
+      '      <g class="sk-stretch-flip" style="transform-origin: 140px 150px;">' +
+      '        <g class="sk-stretch-body" style="transform-origin: 140px 174px;">' +
+      '          <path class="sk-tail-stretch" d="M98 142 Q80 126 86 112" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.8" stroke-linecap="round" />' +
+      '          <path class="sk-stretch-back" d="M98 143 C108 120, 136 122, 158 138 C165 143, 171 144, 176 141" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.9" stroke-linecap="round" stroke-linejoin="round" />' +
+      '          <path class="sk-stretch-legs" d="M98 143 C96 158, 99 169, 99 175 M111 153 L111 175 M122 153 C135 155, 148 157, 159 159" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.8" stroke-linecap="round" />' +
+      '          <path class="sk-stretch-fore" d="M159 159 C174 169, 190 173, 200 173" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.8" stroke-linecap="round" />' +
+      '          <g class="sk-stretch-head" style="transform-origin: 174px 126px;">' +
+      '            <circle cx="176" cy="120" r="19" fill="var(--sketch-paper)" stroke="var(--sketch-stroke)" stroke-width="2.9" />' +
+      '            <path d="M163 110 C155 115, 155 128, 163 130" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.7" stroke-linecap="round" />' +
+      '            <circle class="sk-eye-a" cx="183" cy="117" r="2.0" fill="var(--sketch-stroke)" />' +
+      '            <circle cx="194" cy="121" r="2.2" fill="var(--sketch-stroke)" />' +
+      '            <circle cx="183" cy="125" r="3.0" fill="var(--accent)" opacity="0.32" />' +
+      '          </g>' +
+      '        </g>' +
       '      </g>' +
       '    </g>' +
-      '    <!-- Pose B: Seated front-facing (cup / head_cock / paw_groom / yawn / breath / wrist_shake) -->' +
-      '    <g class="sk-pose-sit" opacity="0" style="transition: opacity 0.42s ease;">' +
+      '    <!-- Pose B: Petite open-bottom minimalist sit (Narrow 24px body under 42px head — NO fat belly!) -->' +
+      '    <g class="sk-pose-sit" opacity="0" style="transition: opacity 0.36s ease;">' +
       '      <g class="sk-sit-body" style="transform-origin: 140px 174px;">' +
-      '        <path class="sk-tail-sit" d="M114 158 Q94 152 92 138" fill="none" stroke="var(--sketch-stroke)" stroke-width="3" stroke-linecap="round" />' +
-      '        <path d="M118 126 C112 148, 114 168, 122 176 L158 176 C164 166, 164 144, 156 126" fill="var(--sketch-paper)" stroke="var(--sketch-stroke)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />' +
+      '        <path class="sk-tail-sit" d="M126 164 Q108 158 106 145" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.8" stroke-linecap="round" />' +
+      '        <!-- Subtle paper backing (no bottom border!) + two light outer strokes + two slender paw lines -->' +
+      '        <path d="M128 140 C125 152, 126 165, 129 174 L151 174 C154 165, 155 152, 152 140 Z" fill="var(--sketch-paper)" stroke="none" />' +
+      '        <path d="M128 141 C125 153, 126 165, 129 174 M152 141 C155 153, 154 165, 151 174" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.8" stroke-linecap="round" />' +
       '        <g class="sk-paws-rest">' +
-      '          <path d="M126 148 C124 160, 126 170, 131 174" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.6" stroke-linecap="round" />' +
-      '          <path class="sk-paw-right" d="M152 148 C154 160, 152 170, 147 174" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.6" stroke-linecap="round" />' +
+      '          <path class="sk-paw-left" d="M135 154 L135 174" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.5" stroke-linecap="round" />' +
+      '          <path class="sk-paw-right" d="M145 154 L145 174" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.5" stroke-linecap="round" />' +
       '        </g>' +
-      '        <!-- Raised paw (for wrist_shake OR paw_groom face rub!) -->' +
-      '        <g class="sk-paw-wave" opacity="0" style="transform-origin: 156px 144px;">' +
-      '          <path d="M154 146 C168 138, 174 124, 168 114" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.8" stroke-linecap="round" />' +
-      '          <circle cx="168" cy="112" r="2.8" fill="var(--accent)" opacity="0.42" />' +
+      '        <!-- Minimalist single-stroke raised paw (only for wrist_shake / paw_groom / cheek_rest) -->' +
+      '        <g class="sk-paw-wave" opacity="0" style="transform-origin: 151px 148px;">' +
+      '          <path d="M150 149 C162 142, 166 130, 161 122" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.7" stroke-linecap="round" />' +
       '        </g>' +
-      '        <g class="sk-sit-head" style="transform-origin: 138px 120px;">' +
-      '          <circle cx="138" cy="102" r="23" fill="var(--sketch-paper)" stroke="var(--sketch-stroke)" stroke-width="3" />' +
-      '          <path class="sk-ear-l" d="M120 90 C110 98, 110 114, 118 116" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.8" stroke-linecap="round" />' +
-      '          <path class="sk-ear-r" d="M156 90 C166 98, 166 114, 158 116" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.8" stroke-linecap="round" />' +
+      '        <g class="sk-sit-head" style="transform-origin: 140px 134px;">' +
+      '          <circle cx="140" cy="119" r="21" fill="var(--sketch-paper)" stroke="var(--sketch-stroke)" stroke-width="2.9" />' +
+      '          <path class="sk-ear-l" d="M123 108 C114 115, 114 130, 122 132" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.7" stroke-linecap="round" />' +
+      '          <path class="sk-ear-r" d="M157 108 C166 115, 166 130, 158 132" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.7" stroke-linecap="round" />' +
       '          <g class="sk-sit-eyes-open">' +
-      '            <circle cx="131" cy="99" r="2.1" fill="var(--sketch-stroke)" />' +
-      '            <circle cx="147" cy="99" r="2.1" fill="var(--sketch-stroke)" />' +
+      '            <circle cx="133" cy="117" r="2.0" fill="var(--sketch-stroke)" />' +
+      '            <circle cx="147" cy="117" r="2.0" fill="var(--sketch-stroke)" />' +
       '          </g>' +
       '          <g class="sk-sit-eyes-soft" opacity="0">' +
-      '            <path d="M127 100 Q131 96 135 100" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.4" stroke-linecap="round" />' +
-      '            <path d="M143 100 Q147 96 151 100" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.4" stroke-linecap="round" />' +
+      '            <path d="M129 118 Q133 114 137 118" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.3" stroke-linecap="round" />' +
+      '            <path d="M143 118 Q147 114 151 118" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.3" stroke-linecap="round" />' +
       '          </g>' +
       '          <g class="sk-sit-eyes-closed" opacity="0">' +
-      '            <path d="M127 99 Q131 103 135 99" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.4" stroke-linecap="round" />' +
-      '            <path d="M143 99 Q147 103 151 99" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.4" stroke-linecap="round" />' +
+      '            <path d="M129 117 Q133 121 137 117" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.3" stroke-linecap="round" />' +
+      '            <path d="M143 117 Q147 121 151 117" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.3" stroke-linecap="round" />' +
       '          </g>' +
-      '          <circle cx="139" cy="106" r="2.4" fill="var(--sketch-stroke)" />' +
-      '          <ellipse class="sk-yawn-mouth" cx="139" cy="114" rx="4" ry="4.8" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.2" opacity="0" />' +
+      '          <circle cx="140" cy="123.5" r="2.2" fill="var(--sketch-stroke)" />' +
+      '          <ellipse class="sk-yawn-mouth" cx="140" cy="130" rx="3.4" ry="4.2" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.1" opacity="0" />' +
       '        </g>' +
       '        <g class="sk-cup" opacity="0">' +
-      '          <rect x="130" y="141" width="18" height="16" rx="4" fill="var(--sketch-paper)" stroke="var(--sketch-stroke)" stroke-width="2.4" />' +
-      '          <rect x="131" y="142" width="16" height="14" rx="3" fill="var(--accent)" opacity="0.22" />' +
-      '          <path d="M148 145 C154 145, 154 153, 148 153" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.2" stroke-linecap="round" />' +
-      '          <path class="sk-steam" d="M136 136 Q134 130 138 125 M143 136 Q145 129 141 124" fill="none" stroke="var(--sketch-stroke)" stroke-width="1.7" stroke-linecap="round" opacity="0.45" />' +
+      '          <rect x="158" y="158" width="15" height="15" rx="3.5" fill="var(--sketch-paper)" stroke="var(--sketch-stroke)" stroke-width="2.2" />' +
+      '          <path d="M173 162 C178 162, 178 169, 173 169" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.0" stroke-linecap="round" />' +
+      '          <path class="sk-steam" d="M163 153 Q161 148 165 143 M169 153 Q171 147 167 142" fill="none" stroke="var(--sketch-stroke)" stroke-width="1.5" stroke-linecap="round" opacity="0.42" />' +
       '        </g>' +
       '      </g>' +
       '    </g>' +
-      '    <!-- Pose C: Side-profile gaze / butterfly watch -->' +
-      '    <g class="sk-pose-gaze" opacity="0" style="transition: opacity 0.42s ease;">' +
+      '    <!-- Pose C: Slender side-profile gaze / butterfly watch -->' +
+      '    <g class="sk-pose-gaze" opacity="0" style="transition: opacity 0.36s ease;">' +
       '      <g class="sk-window">' +
-      '        <rect x="174" y="48" width="56" height="70" rx="5" fill="none" stroke="var(--sketch-stroke)" stroke-width="1.9" opacity="0.28" />' +
-      '        <line x1="202" y1="48" x2="202" y2="118" stroke="var(--sketch-stroke)" stroke-width="1.4" opacity="0.18" />' +
-      '        <line x1="174" y1="83" x2="230" y2="83" stroke="var(--sketch-stroke)" stroke-width="1.4" opacity="0.18" />' +
-      '        <circle cx="215" cy="64" r="4.8" fill="var(--accent)" opacity="0.28" />' +
+      '        <rect x="174" y="48" width="54" height="68" rx="5" fill="none" stroke="var(--sketch-stroke)" stroke-width="1.8" opacity="0.25" />' +
+      '        <line x1="201" y1="48" x2="201" y2="116" stroke="var(--sketch-stroke)" stroke-width="1.3" opacity="0.16" />' +
+      '        <line x1="174" y1="82" x2="228" y2="82" stroke="var(--sketch-stroke)" stroke-width="1.3" opacity="0.16" />' +
+      '        <circle cx="214" cy="64" r="4.4" fill="var(--accent)" opacity="0.26" />' +
       '      </g>' +
       '      <g class="sk-gaze-body" style="transform-origin: 122px 174px;">' +
-      '        <path class="sk-tail-gaze" d="M100 164 Q80 158 78 144" fill="none" stroke="var(--sketch-stroke)" stroke-width="3" stroke-linecap="round" />' +
-      '        <path d="M102 128 C94 148, 98 170, 106 176 L138 176 C142 164, 140 146, 134 130" fill="var(--sketch-paper)" stroke="var(--sketch-stroke)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />' +
-      '        <g class="sk-gaze-head" style="transform-origin: 120px 118px;">' +
-      '          <circle cx="124" cy="108" r="19" fill="var(--sketch-paper)" stroke="var(--sketch-stroke)" stroke-width="3" />' +
-      '          <path d="M114 99 C105 105, 105 120, 114 122" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.8" stroke-linecap="round" />' +
-      '          <circle class="sk-eye-gaze" cx="132" cy="105" r="2.1" fill="var(--sketch-stroke)" />' +
-      '          <circle cx="143" cy="109" r="2.4" fill="var(--sketch-stroke)" />' +
-      '          <circle cx="132" cy="113" r="3" fill="var(--accent)" opacity="0.34" />' +
+      '        <path class="sk-tail-gaze" d="M106 164 Q88 158 86 145" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.8" stroke-linecap="round" />' +
+      '        <path d="M110 136 C104 152, 106 166, 111 174 L134 174 C136 164, 135 150, 131 138 Z" fill="var(--sketch-paper)" stroke="none" />' +
+      '        <path d="M110 136 C104 152, 106 166, 111 174 M131 138 C135 152, 135 165, 133 174" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.8" stroke-linecap="round" />' +
+      '        <g class="sk-gaze-head" style="transform-origin: 122px 126px;">' +
+      '          <circle cx="124" cy="115" r="19" fill="var(--sketch-paper)" stroke="var(--sketch-stroke)" stroke-width="2.9" />' +
+      '          <path d="M114 106 C105 112, 105 126, 114 128" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.7" stroke-linecap="round" />' +
+      '          <circle class="sk-eye-gaze" cx="132" cy="112" r="2.0" fill="var(--sketch-stroke)" />' +
+      '          <circle cx="142" cy="116" r="2.2" fill="var(--sketch-stroke)" />' +
+      '          <circle cx="132" cy="120" r="2.8" fill="var(--accent)" opacity="0.30" />' +
       '        </g>' +
       '      </g>' +
       '    </g>' +
-      '    <!-- Pose D: Unhurried stroll & ground sniff -->' +
-      '    <g class="sk-pose-walk" opacity="0" style="transition: opacity 0.42s ease;">' +
-      '      <g class="sk-walk-body" style="transform-origin: 140px 174px;">' +
-      '        <path class="sk-tail-walk" d="M102 136 Q86 124 90 110" fill="none" stroke="var(--sketch-stroke)" stroke-width="3" stroke-linecap="round" />' +
-      '        <path class="sk-leg-1" d="M110 154 L106 176" fill="none" stroke="var(--sketch-stroke)" stroke-width="3" stroke-linecap="round" />' +
-      '        <path class="sk-leg-2" d="M122 154 L126 176" fill="none" stroke="var(--sketch-stroke)" stroke-width="3" stroke-linecap="round" />' +
-      '        <path class="sk-leg-3" d="M150 154 L146 176" fill="none" stroke="var(--sketch-stroke)" stroke-width="3" stroke-linecap="round" />' +
-      '        <path class="sk-leg-4" d="M160 154 L166 176" fill="none" stroke="var(--sketch-stroke)" stroke-width="3" stroke-linecap="round" />' +
-      '        <rect x="102" y="130" width="64" height="28" rx="14" fill="var(--sketch-paper)" stroke="var(--sketch-stroke)" stroke-width="3" />' +
-      '        <g class="sk-walk-head" style="transform-origin: 164px 128px;">' +
-      '          <circle cx="172" cy="118" r="18" fill="var(--sketch-paper)" stroke="var(--sketch-stroke)" stroke-width="3" />' +
-      '          <path d="M161 108 C153 113, 153 127, 161 129" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.8" stroke-linecap="round" />' +
-      '          <circle cx="179" cy="115" r="2.1" fill="var(--sketch-stroke)" />' +
-      '          <circle cx="190" cy="119" r="2.4" fill="var(--sketch-stroke)" />' +
-      '          <circle cx="179" cy="123" r="3" fill="var(--accent)" opacity="0.34" />' +
+      '    <!-- Pose D: Compact slender side stroll & sniff -->' +
+      '    <g class="sk-pose-walk" opacity="0" style="transition: opacity 0.36s ease;">' +
+      '      <g class="sk-walk-flip" style="transform-origin: 140px 154px;">' +
+      '        <g class="sk-walk-body" style="transform-origin: 140px 174px;">' +
+      '          <path class="sk-tail-walk" d="M112 141 Q96 130 100 116" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.8" stroke-linecap="round" />' +
+      '          <path class="sk-leg-1" d="M119 154 L116 174" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.8" stroke-linecap="round" />' +
+      '          <path class="sk-leg-2" d="M128 154 L131 174" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.8" stroke-linecap="round" />' +
+      '          <path class="sk-leg-3" d="M148 154 L145 174" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.8" stroke-linecap="round" />' +
+      '          <path class="sk-leg-4" d="M156 154 L160 174" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.8" stroke-linecap="round" />' +
+      '          <rect x="112" y="135" width="50" height="22" rx="11" fill="var(--sketch-paper)" stroke="var(--sketch-stroke)" stroke-width="2.9" />' +
+      '          <g class="sk-walk-head" style="transform-origin: 158px 134px;">' +
+      '            <circle cx="166" cy="124" r="17.5" fill="var(--sketch-paper)" stroke="var(--sketch-stroke)" stroke-width="2.9" />' +
+      '            <path d="M155 115 C148 120, 148 133, 156 135" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.7" stroke-linecap="round" />' +
+      '            <circle cx="173" cy="121" r="2.0" fill="var(--sketch-stroke)" />' +
+      '            <circle cx="183" cy="125" r="2.2" fill="var(--sketch-stroke)" />' +
+      '            <circle cx="173" cy="128.5" r="2.8" fill="var(--accent)" opacity="0.30" />' +
+      '          </g>' +
       '        </g>' +
       '      </g>' +
       '    </g>' +
-      '    <!-- Pose E: Curled asleep guardian + sleep bubble + steaming cup -->' +
-      '    <g class="sk-pose-sleep" opacity="0" style="transition: opacity 0.42s ease;">' +
+      '    <!-- Pose E: Curled asleep single-curve guardian -->' +
+      '    <g class="sk-pose-sleep" opacity="0" style="transition: opacity 0.36s ease;">' +
       '      <g class="sk-sleep-body" style="transform-origin: 140px 174px;">' +
-      '        <path class="sk-tail-sleep" d="M98 166 Q86 160 88 150" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.6" stroke-linecap="round" />' +
-      '        <path d="M98 174 C94 144, 124 130, 156 140 C178 146, 186 162, 180 174 Z" fill="var(--sketch-paper)" stroke="var(--sketch-stroke)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />' +
-      '        <path d="M148 154 Q155 158 162 154" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.2" stroke-linecap="round" />' +
-      '        <circle cx="168" cy="160" r="2.2" fill="var(--accent)" opacity="0.65" />' +
-      '        <circle class="sk-sleep-bubble" cx="176" cy="150" r="4" fill="var(--sketch-paper)" stroke="var(--sketch-stroke)" stroke-width="1.6" opacity="0" />' +
-      '      </g>' +
-      '      <g class="sk-sleep-cup" opacity="0">' +
-      '        <rect x="194" y="158" width="15" height="15" rx="3.5" fill="var(--sketch-paper)" stroke="var(--sketch-stroke)" stroke-width="2.2" />' +
-      '        <rect x="195" y="159" width="13" height="13" rx="2.5" fill="var(--accent)" opacity="0.20" />' +
-      '        <path d="M209 162 C214 162, 214 169, 209 169" fill="none" stroke="var(--sketch-stroke)" stroke-width="2" stroke-linecap="round" />' +
-      '        <path class="sk-sleep-steam" d="M199 153 Q197 147 201 142 M205 153 Q207 146 203 141" fill="none" stroke="var(--sketch-stroke)" stroke-width="1.6" stroke-linecap="round" opacity="0.42" />' +
+      '        <path class="sk-tail-sleep" d="M102 167 Q90 161 92 151" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.6" stroke-linecap="round" />' +
+      '        <path d="M102 174 C98 147, 125 134, 155 143 C175 149, 182 163, 176 174 Z" fill="var(--sketch-paper)" stroke="var(--sketch-stroke)" stroke-width="2.9" stroke-linecap="round" stroke-linejoin="round" />' +
+      '        <path d="M148 156 Q154 160 160 156" fill="none" stroke="var(--sketch-stroke)" stroke-width="2.2" stroke-linecap="round" />' +
+      '        <circle cx="166" cy="161" r="2.1" fill="var(--accent)" opacity="0.55" />' +
+      '        <circle class="sk-sleep-bubble" cx="173" cy="151" r="3.8" fill="var(--sketch-paper)" stroke="var(--sketch-stroke)" stroke-width="1.5" opacity="0" />' +
       '      </g>' +
       '    </g>' +
       '  </g>' +
@@ -143,11 +153,14 @@
     const poseWalk = container.querySelector('.sk-pose-walk');
     const poseSleep = container.querySelector('.sk-pose-sleep');
 
+    const stretchFlip = container.querySelector('.sk-stretch-flip');
     const stretchBody = container.querySelector('.sk-stretch-body');
+    const stretchHead = container.querySelector('.sk-stretch-head');
     const sitBody = container.querySelector('.sk-sit-body');
     const sitHead = container.querySelector('.sk-sit-head');
     const gazeBody = container.querySelector('.sk-gaze-body');
     const gazeHead = container.querySelector('.sk-gaze-head');
+    const walkFlip = container.querySelector('.sk-walk-flip');
     const walkBody = container.querySelector('.sk-walk-body');
     const walkHead = container.querySelector('.sk-walk-head');
     const sleepBody = container.querySelector('.sk-sleep-body');
@@ -159,8 +172,6 @@
     const tailGaze = container.querySelector('.sk-tail-gaze');
     const tailWalk = container.querySelector('.sk-tail-walk');
     const tailSleep = container.querySelector('.sk-tail-sleep');
-    const sleepCup = container.querySelector('.sk-sleep-cup');
-    const sleepSteam = container.querySelector('.sk-sleep-steam');
 
     const sitEyesOpen = container.querySelector('.sk-sit-eyes-open');
     const sitEyesSoft = container.querySelector('.sk-sit-eyes-soft');
@@ -177,229 +188,165 @@
     const leg3 = container.querySelector('.sk-leg-3');
     const leg4 = container.querySelector('.sk-leg-4');
 
-    let state = { pose: 'calm', anchorPose: null, autonomous: false, mood: 'calm', easterEgg: null };
+    let state = { pose: 'calm', mood: 'calm', easterEgg: null };
     let lastFrameMs = performance.now();
-
-    // Spring-damper physical channels
-    const spPosX = makeSpring(0, 7.5, 5.2);
-    const spHeadAngle = makeSpring(0, 22, 7.2);
-    const spWalkSniff = makeSpring(0, 18, 6.8);
-
-    // Autonomous Markov Puppy Brain (crisp 3.8~6.8s organic beats so life loop is immediately vivid!)
-    const AUTO_PUPPY_POOL = [
-      { pose: 'nap_guard', weight: 1.9, minSec: 4.0, maxSec: 6.8 },
-      { pose: 'sleep_bubble', weight: 1.7, minSec: 4.2, maxSec: 6.8 },
-      { pose: 'head_cock', weight: 1.7, minSec: 3.8, maxSec: 6.0 },
-      { pose: 'yawn', weight: 1.4, minSec: 3.8, maxSec: 5.8 },
-      { pose: 'paw_groom', weight: 1.5, minSec: 4.0, maxSec: 6.2 },
-      { pose: 'play_bow', weight: 1.4, minSec: 3.8, maxSec: 5.8 },
-      { pose: 'walk', weight: 1.7, minSec: 4.5, maxSec: 7.0 },
-      { pose: 'sniff', weight: 1.4, minSec: 3.8, maxSec: 5.8 },
-      { pose: 'butterfly', weight: 1.6, minSec: 4.5, maxSec: 7.2 },
-      { pose: 'water', weight: 1.3, minSec: 4.2, maxSec: 6.5 }
-    ];
-
-    let brainPose = 'nap_guard';
-    let brainSwitchAt = 0;
-    let lastAnchorKey = '';
-    let strollTargetX = 0;
     let cockSide = 1;
     let nextCockFlipAt = 0;
     let nextBlink = 2600;
     let blinkUntil = 0;
 
-    function pickNextPuppyBehavior(nowMs) {
-      let total = 0;
-      for (let i = 0; i < AUTO_PUPPY_POOL.length; i++) {
-        if (AUTO_PUPPY_POOL[i].pose !== brainPose) total += AUTO_PUPPY_POOL[i].weight;
-      }
-      let roll = Math.random() * total;
-      let chosen = AUTO_PUPPY_POOL[0];
-      for (let i = 0; i < AUTO_PUPPY_POOL.length; i++) {
-        const item = AUTO_PUPPY_POOL[i];
-        if (item.pose === brainPose) continue;
-        roll -= item.weight;
-        if (roll <= 0) {
-          chosen = item;
-          break;
-        }
-      }
-      brainPose = chosen.pose;
-      const dur = chosen.minSec + Math.random() * (chosen.maxSec - chosen.minSec);
-      brainSwitchAt = nowMs + dur * 1000;
+    const spPosX = makeSpring(0, 9.0, 5.8);
+    const spHeadAngle = makeSpring(0, 20, 7.2);
+    const spStretchHead = makeSpring(0, 16, 6.8);
+    const spWalkPitch = makeSpring(0, 16, 6.8);
 
-      if (brainPose === 'walk') {
-        // Pick a fresh spot along the sketch horizon line!
-        const dir = strollTargetX > 10 ? -1 : (strollTargetX < -10 ? 1 : (Math.random() < 0.5 ? 1 : -1));
-        strollTargetX = dir * (22 + Math.random() * 34);
-      } else if (brainPose === 'nap_guard' || brainPose === 'sleep_bubble') {
-        strollTargetX *= 0.25; // gently settle back near center nest
+    function resolveMode(pose, isDnd) {
+      if (isDnd || pose === 'nap_guard' || pose === 'sleep_bubble') return 'sleep';
+      if (pose === 'gaze' || pose === 'butterfly' || pose === 'mote_track' || pose === 'patrol_scan') return 'gaze';
+      if (pose === 'walk' || pose === 'sniff' || pose === 'tiptoe_lift' || pose === 'torso_twist_l' || pose === 'torso_twist_r') return 'walk';
+      if (
+        pose === 'water' || pose === 'tea' || pose === 'tea_blow' ||
+        pose === 'cheek_rest' || pose === 'temple_rub' || pose === 'hug_self' ||
+        pose === 'neck_tilt' || pose === 'neck_tilt_l' || pose === 'neck_tilt_r' ||
+        pose === 'head_cock' || pose === 'paw_groom' || pose === 'wrist_shake' ||
+        pose === 'shoulder_roll' || pose === 'breath' || pose === 'happy_squint' ||
+        pose === 'yawn' || state.easterEgg === 'yawn' || state.easterEgg === 'tea' || state.mood === 'tired'
+      ) {
+        return 'sit';
       }
-      cockSide = Math.random() < 0.5 ? 1 : -1;
-      nextCockFlipAt = nowMs + 2200;
+      // All full-body stretches (`stretch_up`, `lean_back`, `chest_open`, `side_bend_l/r`, `arm_circle`, `table_bow`, `play_bow`, `asym_stretch`)
+      // use the airy open-line side-profile puppy stretch — zero front-facing big belly!
+      return 'stretch';
     }
 
     function update(nowMs) {
       const dt = Math.min(0.064, Math.max(0.004, (nowMs - lastFrameMs) / 1000));
       lastFrameMs = nowMs;
       const t = nowMs / 1000;
-      const breath = 0.5 + 0.5 * Math.sin(t * ((2 * Math.PI) / 6.2));
-
-      if (state.autonomous && nowMs >= brainSwitchAt) {
-        pickNextPuppyBehavior(nowMs);
-      }
-      const pose = state.autonomous ? brainPose : (state.pose || 'calm');
+      const breath = 0.5 + 0.5 * Math.sin(t * ((2 * Math.PI) / 6.4));
 
       if (nowMs >= nextBlink) {
         blinkUntil = nowMs + 140;
-        nextBlink = nowMs + 2800 + Math.random() * 3000;
+        nextBlink = nowMs + 2800 + Math.random() * 3200;
       }
       const blinking = nowMs < blinkUntil;
+      const pose = state.pose || 'calm';
       const isDnd = state.mood === 'dnd';
 
-      spPosX.target = state.autonomous ? strollTargetX : 0;
-      const curX = stepSpring(spPosX, dt);
-      stageMover.style.transform = 'translateX(' + curX.toFixed(2) + 'px)';
-
-      const showButterfly = (pose === 'butterfly' || pose === 'mote_track' || state.easterEgg === 'butterfly');
-      flyGroup.setAttribute('opacity', showButterfly ? '0.78' : '0');
+      const showButterfly = !isDnd && (pose === 'butterfly' || pose === 'mote_track' || state.easterEgg === 'butterfly');
+      flyGroup.setAttribute('opacity', showButterfly ? '0.76' : '0');
       let flyX = 185, flyY = 74;
       if (showButterfly) {
-        flyX = 152 + Math.sin(t * 0.95) * 44;
-        flyY = 66 + Math.cos(t * 1.45) * 16;
-        const flap = 0.55 + 0.45 * Math.abs(Math.sin(t * 9.5));
+        flyX = 152 + Math.sin(t * 0.9) * 42;
+        flyY = 66 + Math.cos(t * 1.4) * 14;
+        const flap = 0.55 + 0.45 * Math.abs(Math.sin(t * 9.2));
         flyGroup.setAttribute('transform', 'translate(' + flyX.toFixed(1) + ', ' + flyY.toFixed(1) + ')');
         flyWings.setAttribute('transform', 'scale(1, ' + flap.toFixed(2) + ')');
       }
 
-      const activeMode = (isDnd || pose === 'nap_guard' || pose === 'sleep_bubble')
-        ? 'sleep'
-        : (pose === 'gaze' || pose === 'butterfly' || pose === 'mote_track' || pose === 'patrol_scan')
-          ? 'gaze'
-          : (pose === 'walk' || pose === 'sniff')
-            ? 'walk'
-            : (pose === 'water' || pose === 'tea' || pose === 'tea_blow' || pose === 'cheek_rest' || pose === 'neck_tilt' || pose === 'head_cock' || pose === 'paw_groom' || pose === 'wrist_shake' || pose === 'shoulder_roll' || pose === 'breath' || pose === 'yawn' || state.easterEgg === 'yawn' || state.mood === 'tired')
-              ? 'sit'
-              : 'stretch';
-
+      const activeMode = resolveMode(pose, isDnd);
       poseStretch.setAttribute('opacity', activeMode === 'stretch' ? '1' : '0');
       poseSit.setAttribute('opacity', activeMode === 'sit' ? '1' : '0');
       poseGaze.setAttribute('opacity', activeMode === 'gaze' ? '1' : '0');
       poseWalk.setAttribute('opacity', activeMode === 'walk' ? '1' : '0');
       poseSleep.setAttribute('opacity', activeMode === 'sleep' ? '1' : '0');
 
+      spPosX.target = activeMode === 'walk' && (pose === 'walk' || pose === 'sniff') ? Math.sin(t * 0.85) * 16 : 0;
+      const curX = stepSpring(spPosX, dt);
+      stageMover.style.transform = 'translateX(' + curX.toFixed(2) + 'px)';
+
       if (activeMode === 'sleep') {
-        sleepBody.style.transform = 'scaleY(' + (1 + breath * 0.044).toFixed(4) + ')';
-        const hasCup = (pose === 'nap_guard' || pose === 'sleep_bubble');
-        sleepCup.setAttribute('opacity', hasCup ? '1' : '0');
-        if (hasCup && sleepSteam) {
-          sleepSteam.setAttribute('transform', 'translate(' + (Math.sin(t * 2.1) * 1.8).toFixed(1) + ', ' + (-((t * 5.5) % 5.5)).toFixed(1) + ')');
-        }
-        // Sleep bubble gently expanding & popping with breath!
-        if (pose === 'sleep_bubble') {
-          const bR = 2.2 + breath * 4.4;
-          sleepBubble.setAttribute('r', bR.toFixed(2));
-          sleepBubble.setAttribute('cx', (175 + breath * 2.5).toFixed(1));
-          sleepBubble.setAttribute('cy', (151 - breath * 3.0).toFixed(1));
-          sleepBubble.setAttribute('opacity', (0.30 + breath * 0.45).toFixed(2));
-        } else {
-          sleepBubble.setAttribute('opacity', '0');
-        }
-        const gentleSway = Math.sin(t * 1.35) * 2.8;
-        const twitch = Math.sin(t * 0.65) > 0.78 ? Math.sin(t * 7.8) * 4.5 : 0;
-        const totalTail = gentleSway + twitch;
-        tailSleep.setAttribute('d', 'M98 166 Q' + (86 + totalTail * 0.45).toFixed(1) + ' 160 ' + (88 + totalTail).toFixed(1) + ' 150');
+        sleepBody.style.transform = 'scaleY(' + (1 + breath * 0.038).toFixed(4) + ')';
+        const bR = 2.0 + breath * 3.8;
+        sleepBubble.setAttribute('r', bR.toFixed(2));
+        sleepBubble.setAttribute('cx', (173 + breath * 2.0).toFixed(1));
+        sleepBubble.setAttribute('cy', (151 - breath * 2.5).toFixed(1));
+        sleepBubble.setAttribute('opacity', (0.28 + breath * 0.40).toFixed(2));
+        const gentleSway = Math.sin(t * 1.3) * 2.5;
+        tailSleep.setAttribute('d', 'M102 167 Q' + (90 + gentleSway * 0.5).toFixed(1) + ' 161 ' + (92 + gentleSway).toFixed(1) + ' 151');
         return;
       }
 
       if (activeMode === 'gaze') {
-        windowBox.setAttribute('opacity', pose === 'butterfly' ? '0' : '1');
-        gazeBody.style.transform = 'scaleY(' + (1 + breath * 0.025).toFixed(4) + ')';
-        const wag = Math.sin(t * 1.9) * 5.5;
-        tailGaze.setAttribute('d', 'M100 164 Q' + (80 + wag * 0.5).toFixed(1) + ' 158 ' + (78 + wag).toFixed(1) + ' 144');
-        eyeGaze.setAttribute('r', blinking ? '0.6' : '2.1');
-        if (pose === 'butterfly') {
-          const lookPitch = (flyY - 95) * 0.25;
-          gazeHead.style.transform = 'rotate(' + lookPitch.toFixed(1) + 'deg)';
-        } else {
-          gazeHead.style.transform = 'rotate(0deg)';
-        }
+        windowBox.setAttribute('opacity', showButterfly ? '0' : '1');
+        gazeBody.style.transform = 'scaleY(' + (1 + breath * 0.022).toFixed(4) + ')';
+        const lookAngle = showButterfly ? ((flyY - 102) * 0.22) : (-5 + Math.sin(t * 0.55) * 2.5);
+        gazeHead.style.transform = 'rotate(' + lookAngle.toFixed(2) + 'deg)';
+        const wag = Math.sin(t * (showButterfly ? 3.2 : 1.7)) * 4.5;
+        tailGaze.setAttribute('d', 'M106 164 Q' + (88 + wag * 0.5).toFixed(1) + ' 158 ' + (86 + wag).toFixed(1) + ' 145');
+        eyeGaze.setAttribute('r', blinking ? '0.6' : '2.0');
         return;
       }
 
       if (activeMode === 'walk') {
-        const isSniff = pose === 'sniff';
-        spWalkSniff.target = isSniff ? 1 : 0;
-        const sniffVal = stepSpring(spWalkSniff, dt);
+        const faceLeft = pose === 'torso_twist_l';
+        walkFlip.style.transform = faceLeft ? 'scaleX(-1)' : 'scaleX(1)';
+        const isTwist = pose === 'torso_twist_l' || pose === 'torso_twist_r';
+        const isTiptoe = pose === 'tiptoe_lift';
+        const step = (pose === 'walk' || pose === 'sniff') ? Math.sin(t * 3.2) * 5.0 : 0;
+        const riseY = isTiptoe ? -Math.pow(0.5 - 0.5 * Math.cos(t * 1.6), 1.3) * 8.5 : -Math.abs(step) * 0.35;
 
-        if (isSniff) {
-          walkBody.style.transform = 'translateY(1px)';
-          const sniffBob = Math.sin(t * 8.5) * 2.4;
-          walkHead.style.transform = 'translate(2px, ' + (14 * sniffVal + sniffBob * 0.5).toFixed(1) + 'px) rotate(' + (22 * sniffVal).toFixed(1) + 'deg)';
-          const fastWag = Math.sin(t * 6.5) * 6.5;
-          tailWalk.setAttribute('d', 'M102 136 Q86 124 ' + (90 + fastWag).toFixed(1) + ' 110');
-          leg1.setAttribute('d', 'M110 154 L108 176');
-          leg2.setAttribute('d', 'M122 154 L124 176');
-          leg3.setAttribute('d', 'M150 154 L148 176');
-          leg4.setAttribute('d', 'M160 154 L164 176');
-        } else {
-          const stride = Math.sin(t * 3.8);
-          const bob = Math.abs(stride) * 3.2;
-          walkBody.style.transform = 'translateY(' + (-bob).toFixed(2) + 'px)';
-          walkHead.style.transform = 'rotate(' + (Math.sin(t * 1.9) * 3.5).toFixed(1) + 'deg)';
-          leg1.setAttribute('d', 'M110 154 L' + (106 + stride * 7.5).toFixed(1) + ' 176');
-          leg2.setAttribute('d', 'M122 154 L' + (126 - stride * 7.5).toFixed(1) + ' 176');
-          leg3.setAttribute('d', 'M150 154 L' + (146 - stride * 7.5).toFixed(1) + ' 176');
-          leg4.setAttribute('d', 'M160 154 L' + (166 + stride * 7.5).toFixed(1) + ' 176');
-          const wag = Math.sin(t * 3.8) * 5.5;
-          tailWalk.setAttribute('d', 'M102 136 Q86 124 ' + (90 + wag).toFixed(1) + ' 110');
-        }
+        leg1.setAttribute('d', 'M119 154 L' + (116 + step).toFixed(1) + ' 174');
+        leg2.setAttribute('d', 'M128 154 L' + (131 - step).toFixed(1) + ' 174');
+        leg3.setAttribute('d', 'M148 154 L' + (145 - step).toFixed(1) + ' 174');
+        leg4.setAttribute('d', 'M156 154 L' + (160 + step).toFixed(1) + ' 174');
+        walkBody.style.transform = 'translateY(' + riseY.toFixed(2) + 'px)';
+
+        spWalkPitch.target = pose === 'sniff' ? 16 : (isTiptoe ? -11 : (isTwist ? -8 : 0));
+        const wp = stepSpring(spWalkPitch, dt);
+        walkHead.style.transform = 'rotate(' + wp.toFixed(2) + 'deg)';
+
+        const wag = Math.sin(t * 3.8) * 5.8;
+        tailWalk.setAttribute('d', 'M112 141 Q96 130 ' + (100 + wag).toFixed(1) + ' 116');
         return;
       }
 
       if (activeMode === 'sit') {
-        const rollLift = pose === 'shoulder_roll' ? Math.sin(t * 1.5) * 3.5 : 0;
-        const sy = 1 + breath * (pose === 'breath' ? 0.042 : 0.024);
+        const rollLift = pose === 'shoulder_roll' ? Math.sin(t * 1.5) * 3.0 : 0;
+        const sy = 1 + breath * (pose === 'breath' ? 0.038 : 0.022);
         sitBody.style.transform = 'translateY(' + (-rollLift).toFixed(2) + 'px) scaleY(' + sy.toFixed(4) + ')';
 
         if (pose === 'head_cock' && nowMs >= nextCockFlipAt) {
           cockSide = -cockSide;
-          nextCockFlipAt = nowMs + 1900 + Math.random() * 1100;
+          nextCockFlipAt = nowMs + 2000 + Math.random() * 1100;
         }
 
-        if (pose === 'neck_tilt') {
-          spHeadAngle.target = Math.sin(t * 0.72) * 14;
+        if (pose === 'neck_tilt_l') {
+          spHeadAngle.target = -14 * (0.85 + 0.15 * breath);
+        } else if (pose === 'neck_tilt_r') {
+          spHeadAngle.target = 14 * (0.85 + 0.15 * breath);
+        } else if (pose === 'neck_tilt') {
+          spHeadAngle.target = Math.sin(t * 0.72) * 13.5;
         } else if (pose === 'head_cock') {
-          spHeadAngle.target = cockSide * 15.5;
-        } else if (pose === 'paw_groom') {
-          spHeadAngle.target = 8.5 + Math.sin(t * 5.2) * 3.0;
+          spHeadAngle.target = cockSide * 14.5;
+        } else if (pose === 'paw_groom' || pose === 'cheek_rest' || pose === 'temple_rub') {
+          spHeadAngle.target = 8.0 + Math.sin(t * 3.8) * 2.5;
         } else if (pose === 'yawn' || state.easterEgg === 'yawn') {
-          spHeadAngle.target = Math.sin(t * 1.4) * 5.5;
+          spHeadAngle.target = Math.sin(t * 1.4) * 5.0;
         } else {
           spHeadAngle.target = 0;
         }
         const curHeadAng = stepSpring(spHeadAngle, dt);
         sitHead.style.transform = 'rotate(' + curHeadAng.toFixed(2) + 'deg)';
 
-        const raisingPaw = (pose === 'wrist_shake' || pose === 'paw_groom');
+        const raisingPaw = (pose === 'wrist_shake' || pose === 'paw_groom' || pose === 'cheek_rest' || pose === 'temple_rub');
         pawWave.setAttribute('opacity', raisingPaw ? '1' : '0');
         pawRight.setAttribute('opacity', raisingPaw ? '0' : '1');
-        if (pose === 'paw_groom') {
-          // Rubbing cheek gently with front paw!
-          const rub = Math.sin(t * 5.2) * 8 - 10;
+        if (pose === 'paw_groom' || pose === 'temple_rub' || pose === 'cheek_rest') {
+          const rub = Math.sin(t * 4.4) * 6 - 10;
           pawWave.style.transform = 'rotate(' + rub.toFixed(2) + 'deg)';
         } else if (pose === 'wrist_shake') {
-          pawWave.style.transform = 'rotate(' + (Math.sin(t * 8.5) * 14).toFixed(2) + 'deg)';
+          pawWave.style.transform = 'rotate(' + (Math.sin(t * 7.2) * 12).toFixed(2) + 'deg)';
         }
 
-        const wag = Math.sin(t * 2.1) * 5.2;
-        tailSit.setAttribute('d', 'M114 158 Q' + (94 + wag * 0.5).toFixed(1) + ' 152 ' + (92 + wag).toFixed(1) + ' 138');
+        const wag = Math.sin(t * 2.0) * 4.8;
+        tailSit.setAttribute('d', 'M126 164 Q' + (108 + wag * 0.5).toFixed(1) + ' 158 ' + (106 + wag).toFixed(1) + ' 145');
 
         const isYawn = pose === 'yawn' || state.easterEgg === 'yawn';
-        const showCup = pose === 'water' || pose === 'tea' || pose === 'tea_blow';
+        const showCup = pose === 'water' || pose === 'tea' || pose === 'tea_blow' || state.easterEgg === 'tea';
         cup.setAttribute('opacity', showCup ? '1' : '0');
         if (showCup) {
-          steam.setAttribute('transform', 'translate(0, ' + (-((t * 6) % 5)).toFixed(1) + ')');
+          steam.setAttribute('transform', 'translate(0, ' + (-((t * 5.5) % 5)).toFixed(1) + ')');
         }
 
         if (isYawn) {
@@ -408,12 +355,17 @@
           sitEyesSoft.setAttribute('opacity', yawnPhase > 0.35 ? '1' : '0');
           sitEyesClosed.setAttribute('opacity', '0');
           yawnMouth.setAttribute('opacity', yawnPhase > 0.35 ? '1' : '0');
-          yawnMouth.setAttribute('ry', (2.2 + yawnPhase * 3.5).toFixed(1));
-        } else if (pose === 'breath' || pose === 'paw_groom') {
+          yawnMouth.setAttribute('ry', (2.0 + yawnPhase * 3.0).toFixed(1));
+        } else if (pose === 'breath' || pose === 'paw_groom' || pose === 'temple_rub') {
           yawnMouth.setAttribute('opacity', '0');
           sitEyesOpen.setAttribute('opacity', '0');
-          sitEyesSoft.setAttribute('opacity', pose === 'paw_groom' ? '1' : '0');
+          sitEyesSoft.setAttribute('opacity', pose === 'breath' ? '0' : '1');
           sitEyesClosed.setAttribute('opacity', pose === 'breath' ? '1' : '0');
+        } else if (state.mood === 'refreshed' || pose === 'happy_squint' || pose === 'hug_self' || showCup) {
+          yawnMouth.setAttribute('opacity', '0');
+          sitEyesOpen.setAttribute('opacity', '0');
+          sitEyesSoft.setAttribute('opacity', '1');
+          sitEyesClosed.setAttribute('opacity', '0');
         } else {
           yawnMouth.setAttribute('opacity', '0');
           sitEyesClosed.setAttribute('opacity', '0');
@@ -428,34 +380,25 @@
         return;
       }
 
-      // Stretch / play_bow pose
-      const bowExtra = pose === 'play_bow' ? 0.035 : 0;
-      const sy = 1 + breath * (0.028 + bowExtra);
+      // Pose A: Minimalist open-line side stretch (flips left/right cleanly for side_bend_l / side_bend_r!)
+      const flipLeft = pose === 'side_bend_l';
+      stretchFlip.style.transform = flipLeft ? 'scaleX(-1)' : 'scaleX(1)';
+      const isUpStretch = (pose === 'stretch_up' || pose === 'lean_back' || pose === 'chest_open' || pose === 'arm_circle');
+      spStretchHead.target = isUpStretch ? (-10 - breath * 5) : (2 + breath * 3);
+      const shAng = stepSpring(spStretchHead, dt);
+      stretchHead.style.transform = 'rotate(' + shAng.toFixed(2) + 'deg)';
+
+      const sy = 1 + breath * 0.032;
       stretchBody.style.transform = 'scaleY(' + sy.toFixed(4) + ')';
-      const wagSpeed = pose === 'play_bow' ? 4.2 : 2.1;
-      const wag = Math.sin(t * wagSpeed) * 6.5;
-      tailStretch.setAttribute('d', 'M94 140 Q76 124 ' + (82 + wag).toFixed(1) + ' 110');
-      eyeA.setAttribute('r', blinking ? '0.6' : '2.1');
+      const wagSpeed = (pose === 'play_bow' || pose === 'arm_circle') ? 3.8 : 2.1;
+      const wag = Math.sin(t * wagSpeed) * 6.0;
+      tailStretch.setAttribute('d', 'M98 142 Q80 126 ' + (86 + wag).toFixed(1) + ' 112');
+      eyeA.setAttribute('r', blinking ? '0.6' : '2.0');
     }
 
     return {
       setState: function (next) {
-        const prevAuto = state.autonomous;
         state = Object.assign({}, state, next || {});
-        if (state.autonomous) {
-          const anchorKey = (state.anchorPose || '') + '|' + (state.anchorToken || '');
-          if (!prevAuto || (state.anchorPose && anchorKey !== lastAnchorKey)) {
-            lastAnchorKey = anchorKey;
-            brainPose = state.anchorPose || 'nap_guard';
-            const startDelay = brainPose === 'nap_guard' ? (3200 + Math.random() * 1800) : (4800 + Math.random() * 2000);
-            brainSwitchAt = performance.now() + startDelay;
-            if (brainPose === 'walk') {
-              strollTargetX = (Math.random() < 0.5 ? 1 : -1) * (24 + Math.random() * 28);
-            }
-          }
-        } else {
-          strollTargetX = 0;
-        }
       },
       update: update
     };

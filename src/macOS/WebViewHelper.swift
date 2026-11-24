@@ -25,11 +25,28 @@ private final class WeakScriptHandler: NSObject, WKScriptMessageHandler {
     }
 }
 
+private final class HostWebView: WKWebView {
+    var dragTopBarHeight: CGFloat = 0
+
+    override func mouseDown(with event: NSEvent) {
+        if dragTopBarHeight > 0, let win = self.window {
+            let pt = convert(event.locationInWindow, from: nil)
+            let checkY = isFlipped ? pt.y : (bounds.height - pt.y)
+            if checkY >= 0 && checkY <= dragTopBarHeight {
+                win.performDrag(with: event)
+                return
+            }
+        }
+        super.mouseDown(with: event)
+    }
+}
+
 @MainActor
 final class WebViewHost: NSObject, WKNavigationDelegate {
     let webView: WKWebView
     weak var delegate: WebBridgeDelegate?
     private var isReady: Bool = false
+    private var pendingViewportJSON: String?
     private var pendingSnapshotJSON: String?
 
     init(pageName: String, queryItems: [URLQueryItem] = [], delegate: WebBridgeDelegate? = nil) {
@@ -40,7 +57,10 @@ final class WebViewHost: NSObject, WKNavigationDelegate {
         let ucc = WKUserContentController()
         config.userContentController = ucc
 
-        let wv = WKWebView(frame: .zero, configuration: config)
+        let wv = HostWebView(frame: .zero, configuration: config)
+        if pageName == "preferences" || pageName == "welcome" {
+            wv.dragTopBarHeight = 46
+        }
         wv.setValue(false, forKey: "drawsBackground")
         wv.allowsBackForwardNavigationGestures = false
         self.webView = wv
@@ -65,8 +85,15 @@ final class WebViewHost: NSObject, WKNavigationDelegate {
         if !queryItems.isEmpty {
             comps?.queryItems = queryItems
         }
-        let finalURL = (comps?.url ?? pageURL).standardizedFileURL
+        // IMPORTANT: Do NOT call `.standardizedFileURL` on `comps?.url` — Foundation strips `?queryItems` on file URLs!
+        let finalURL = comps?.url ?? pageURL
         webView.loadFileURL(finalURL, allowingReadAccessTo: uiRoot)
+    }
+
+    func pushViewportConfigJSON(_ json: String) {
+        pendingViewportJSON = json
+        guard isReady else { return }
+        evaluateViewportConfig(json)
     }
 
     func pushSnapshotJSON(_ json: String) {
@@ -85,6 +112,16 @@ final class WebViewHost: NSObject, WKNavigationDelegate {
         webView.evaluateJavaScript("window.__moveNowStartThaw && window.__moveNowStartThaw();", completionHandler: nil)
     }
 
+    func syncWorldEpoch(seed: UInt32, originMs: Int64) {
+        guard isReady else { return }
+        webView.evaluateJavaScript("window.__moveNowSyncWorldEpoch && window.__moveNowSyncWorldEpoch(\(seed), \(originMs));", completionHandler: nil)
+    }
+
+    private func evaluateViewportConfig(_ json: String) {
+        let script = "window.__moveNowConfigureViewport && window.__moveNowConfigureViewport(\(json));"
+        webView.evaluateJavaScript(script, completionHandler: nil)
+    }
+
     private func evaluateSnapshot(_ json: String) {
         let script = "window.__moveNowReceiveState && window.__moveNowReceiveState(\(json));"
         webView.evaluateJavaScript(script, completionHandler: nil)
@@ -93,6 +130,9 @@ final class WebViewHost: NSObject, WKNavigationDelegate {
     func didReceiveMessage(type: String, payload: [String: Any]) {
         if type == "ready" {
             isReady = true
+            if let vp = pendingViewportJSON {
+                evaluateViewportConfig(vp)
+            }
             if let pending = pendingSnapshotJSON {
                 evaluateSnapshot(pending)
             }
@@ -102,6 +142,9 @@ final class WebViewHost: NSObject, WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         isReady = true
+        if let vp = pendingViewportJSON {
+            evaluateViewportConfig(vp)
+        }
         if let pending = pendingSnapshotJSON {
             evaluateSnapshot(pending)
         }

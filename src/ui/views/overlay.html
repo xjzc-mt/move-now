@@ -25,10 +25,11 @@
     </div>
   </section>
 
-  <!-- Surface: Fullscreen Break & Stage-2 Frost Seal (Primary Monitor) -->
+  <!-- Surface: Fullscreen Break & Stage-2 Frost Seal (Primary & Secondary Monitors) -->
   <section class="surface surface-fullscreen" id="surfaceFullscreen" hidden>
     <div class="fs-backdrop"></div>
     <canvas class="optical-canvas" id="fsOpticalCanvas"></canvas>
+    <canvas class="sealed-roaming-canvas" id="sealedRoamingCanvas"></canvas>
 
     <!-- Stage-1: Active Break Content -->
     <div class="fs-content" id="fsContent">
@@ -68,7 +69,6 @@
         <p class="sealed-message" id="sealedMessage"></p>
       </div>
       <canvas class="sealed-front-canvas" id="sealedFrontCanvas"></canvas>
-      <canvas class="sealed-roaming-canvas" id="sealedRoamingCanvas"></canvas>
       <div class="sealed-wake-hint" id="sealedWakeHint">轻触键鼠或任意键返回桌面</div>
     </div>
   </section>

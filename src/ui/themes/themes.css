@@ -4,8 +4,8 @@
   --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-breath: cubic-bezier(0.45, 0.05, 0.55, 0.95);
 
-  /* Default theme (geometric - light) */
-  --veil-bg: rgba(247, 245, 240, 0.54);
+  /* Default theme (geometric - light): airy frosted veil over real blurred desktop */
+  --veil-bg: rgba(246, 244, 239, 0.34);
   --panel-bg: rgba(250, 248, 244, 0.45);
   --surface: rgba(255, 255, 255, 0.56);
   --surface-hover: rgba(255, 255, 255, 0.80);
@@ -25,7 +25,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --veil-bg: rgba(24, 26, 29, 0.66);
+    --veil-bg: rgba(24, 26, 30, 0.42);
     --panel-bg: rgba(30, 32, 36, 0.45);
     --surface: rgba(255, 255, 255, 0.08);
     --surface-hover: rgba(255, 255, 255, 0.14);
@@ -46,7 +46,7 @@
 
 /* Theme: sketch */
 [data-theme="sketch"] {
-  --veil-bg: rgba(246, 242, 232, 0.62);
+  --veil-bg: rgba(246, 242, 234, 0.38);
   --panel-bg: rgba(248, 244, 235, 0.48);
   --surface: rgba(255, 253, 248, 0.62);
   --surface-hover: rgba(255, 253, 248, 0.88);
@@ -65,7 +65,7 @@
 
 @media (prefers-color-scheme: dark) {
   [data-theme="sketch"] {
-    --veil-bg: rgba(29, 30, 33, 0.72);
+    --veil-bg: rgba(29, 30, 34, 0.46);
     --panel-bg: rgba(34, 35, 38, 0.50);
     --surface: rgba(255, 252, 245, 0.08);
     --surface-hover: rgba(255, 252, 245, 0.14);
@@ -81,9 +81,9 @@
   }
 }
 
-/* Theme: nature_window (物理视窗：透出真实桌面模糊 + 失焦/起雾/凝霜) */
+/* Theme: nature_window (物理视窗：透出真实桌面模糊 + 树影/起雾/凝霜) */
 [data-theme="nature_window"] {
-  --veil-bg: rgba(24, 36, 48, 0.08);
+  --veil-bg: rgba(244, 243, 239, 0.04);
   --panel-bg: rgba(246, 248, 250, 0.44);
   --surface: rgba(255, 255, 255, 0.62);
   --surface-hover: rgba(255, 255, 255, 0.86);
@@ -100,7 +100,7 @@
 
 @media (prefers-color-scheme: dark) {
   [data-theme="nature_window"] {
-    --veil-bg: rgba(12, 16, 22, 0.24);
+    --veil-bg: rgba(12, 16, 22, 0.12);
     --panel-bg: rgba(24, 27, 32, 0.48);
     --surface: rgba(255, 255, 255, 0.10);
     --surface-hover: rgba(255, 255, 255, 0.17);

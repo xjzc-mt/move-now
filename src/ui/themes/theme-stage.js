@@ -8,7 +8,7 @@
     let currentTheme = null;
     let renderer = null;
     let rafId = null;
-    let lastState = { theme: 'geometric', natureStyle: 'bokeh', pose: 'calm', mood: 'calm', easterEgg: null };
+    let lastState = { theme: 'geometric', natureStyle: 'sunlight', pose: 'calm', mood: 'calm', easterEgg: null };
     const reduceMotion = root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     function buildRenderer(theme) {

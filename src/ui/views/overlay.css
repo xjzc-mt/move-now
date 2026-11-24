@@ -152,6 +152,11 @@ body {
   transition: opacity 0.6s ease;
 }
 
+/* Avoid double-stacking backdrop opacity when optical-canvas renders Sealed veil */
+.surface-fullscreen.sealed .fs-backdrop {
+  opacity: 0.16;
+}
+
 .optical-canvas {
   position: absolute;
   inset: 0;
@@ -350,40 +355,45 @@ body {
   margin-bottom: 18px;
 }
 
-/* 3) Nature Bokeh: Turrell Celestial Solar Orbit Dial (mathematically centered at 44% viewport height) */
-.sealed-stage[data-sealed-layout="solar_orbit"] .sealed-clock-wrap {
-  position: fixed;
-  top: 44%;
-  left: 50%;
-  transform: translate(-50%, -68%);
+/* 3) Nature Sunlight (窗棂树影): Architectural Sunlit Plaster Typography below Swaying Canopy */
+.sealed-stage[data-sealed-layout="sunlit_window"] .sealed-hero {
+  align-items: flex-start;
+  text-align: left;
+  max-width: min(1120px, 80vw);
+  padding-top: 18vh;
 }
 
-.sealed-stage[data-sealed-layout="solar_orbit"] .sealed-clock {
-  font-size: clamp(50px, 6vw, 84px);
+.sealed-stage[data-sealed-layout="sunlit_window"] .sealed-clock {
+  font-size: clamp(92px, 12vw, 174px);
   font-weight: 200;
-  letter-spacing: -0.01em;
-  color: var(--ink);
-  margin: 0;
+  letter-spacing: -0.02em;
+  color: rgba(58, 54, 44, 0.78);
+  margin-bottom: 16px;
 }
 
-.sealed-stage[data-sealed-layout="solar_orbit"] .sealed-status-pill {
-  position: fixed;
-  top: 44%;
-  left: 50%;
-  transform: translate(-50%, 28px);
-  margin: 0;
-  background: transparent;
-  border-color: transparent;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+@media (prefers-color-scheme: dark) {
+  .sealed-stage[data-sealed-layout="sunlit_window"] .sealed-clock {
+    color: rgba(242, 232, 214, 0.88);
+  }
 }
 
-.sealed-stage[data-sealed-layout="solar_orbit"] .sealed-message {
-  position: fixed;
-  top: 81%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 84vw;
+.sealed-stage[data-sealed-layout="sunlit_window"] .sealed-status-pill {
+  margin-bottom: 18px;
+}
+
+.sealed-stage[data-sealed-layout="sunlit_window"] .sealed-message {
+  text-align: left;
+  font-size: clamp(23px, 2.4vw, 34px);
+  font-weight: 400;
+  max-width: 780px;
+  line-height: 1.52;
+  color: rgba(52, 48, 40, 0.90);
+}
+
+@media (prefers-color-scheme: dark) {
+  .sealed-stage[data-sealed-layout="sunlit_window"] .sealed-message {
+    color: rgba(240, 233, 220, 0.92);
+  }
 }
 
 /* 4) Nature Frost / Mist: Asymmetric Cinema-Poster Editorial Layout + Vitality Wave */
@@ -516,6 +526,15 @@ body {
 
 .sealed-roaming-canvas.active {
   opacity: 1;
+}
+
+body.is-secondary-screen .sealed-roaming-canvas {
+  z-index: 2;
+}
+
+.surface-fullscreen.fading-out .sealed-roaming-canvas {
+  opacity: 0;
+  transition: opacity 0.45s ease;
 }
 
 .sealed-wake-hint {
@@ -764,4 +783,34 @@ body {
   align-items: center;
   justify-content: center;
   text-align: center;
+}
+
+/* 6. Multi-Monitor Secondary Screen Hierarchy
+   Primary screen = Main Home Stage (clock + status + copy + main activity);
+   Secondary screen = Clean Time + Serene Background (until a companion crosses over from Primary!). */
+body.is-secondary-screen .sealed-status-pill,
+body.is-secondary-screen .sealed-divider,
+body.is-secondary-screen .sealed-sketch-line,
+body.is-secondary-screen .sealed-message,
+body.is-secondary-screen .sealed-wake-hint {
+  display: none !important;
+}
+
+body.is-secondary-screen .sealed-hero {
+  opacity: 0.88;
+  align-items: center !important;
+  text-align: center !important;
+  margin: 0 auto !important;
+}
+
+body.is-secondary-screen .fs-message,
+body.is-secondary-screen .fs-timer-row,
+body.is-secondary-screen .fs-snooze {
+  display: none !important;
+}
+
+body.is-secondary-screen .fs-escape-note {
+  opacity: 0.36;
+  font-size: 13px;
+  letter-spacing: 0.04em;
 }

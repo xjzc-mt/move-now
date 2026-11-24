@@ -2,12 +2,12 @@
   'use strict';
 
   /**
-   * Procedural Optical Physics Renderer for MoveNow ("自然视窗" & Stage-2 Frost Seal):
+   * Procedural Optical Physics Renderer for MoveNow ("自然视窗" & Stage-2 Sealed Backdrops):
    * Designed to layer directly over macOS's real blurred desktop (NSVisualEffectView behindWindow)
    * with genuine optical contrast in BOTH bright light-mode windows and dark-mode workspaces:
-   * - bokeh: Multi-layered optical depth-of-field bokeh discs with spherical-aberration rim rings
-   * - mist:  Cool-warm condensing window fog + micro-beads + refractive sliding droplets with shadows & trails
-   * - frost: Dual-pass glacial blue-slate + crystalline white fractal 60-deg dendrites + radial warm thaw
+   * - sunlight: Komorebi (窗棂树影) — diagonal Venetian blind sunbeams + swaying dual-depth botanical leaf shadows
+   * - mist:     Cool-warm condensing window fog + micro-beads + refractive sliding droplets with shadows & trails
+   * - frost:    Dual-pass glacial blue-slate + crystalline white fractal 60-deg dendrites + radial warm thaw
    */
 
   function mulberry32(seed) {
@@ -42,7 +42,7 @@
     let width = 0;
     let height = 0;
     let dpr = 1;
-    let mode = opts.mode || 'bokeh'; // 'bokeh' | 'mist' | 'frost' | 'warm_matte' | 'vellum'
+    let mode = opts.mode || 'sunlight'; // 'sunlight' | 'mist' | 'frost' | 'warm_matte' | 'vellum'
     let deepSeal = Boolean(opts.deepSeal);
     let easterEgg = null;
     let mood = 'calm';
@@ -52,7 +52,9 @@
     let thawStartedAt = 0;
     const THAW_DURATION_MS = 820;
 
-    let bokehDiscs = [];
+    let sunBranches = [];
+    let sunMotes = [];
+    let driftingLeaves = [];
     let mistBeads = [];
     let droplets = [];
     let frostOffscreen = null;
@@ -60,12 +62,31 @@
     let frostSeed = Math.floor(Math.random() * 100000);
     let lastDark = isDarkScheme();
 
-    // Organic random-yet-logical atmospheric breeze arc (swells gently every 26-44s, then calms)
-    let breezeElapsed = 0;
-    let breezeNextAt = 18 + Math.random() * 16;
-    let breezeDur = 14;
-    let breezeDir = Math.random() < 0.5 ? 1 : -1;
+    // Panoramic Multi-Display Viewport State (defaults cleanly to single-screen local rect)
+    let pan = {
+      vx: 0,
+      vy: 0,
+      ww: 0,
+      wh: 0,
+      originMs: 0,
+      screens: null
+    };
+
+    // Deterministic closed-form atmospheric breeze envelope (100% synced across all monitors with 0 IPC!)
     let breezeVelX = 0;
+    function computeSyncedBreeze(simSec) {
+      const period = 34;
+      const cyc = Math.floor(simSec / period);
+      const localT = simSec - cyc * period;
+      const h = ((cyc * 2654435761) ^ (frostSeed >>> 0)) >>> 0;
+      const start = 15 + (h % 7);
+      const dur = 12 + ((h >>> 4) % 4);
+      const dir = ((h >>> 8) & 1) === 0 ? 1 : -1;
+      if (localT >= start && localT <= start + dur) {
+        return dir * Math.sin(((localT - start) / dur) * Math.PI);
+      }
+      return 0;
+    }
 
     function resize() {
       const rect = canvas.getBoundingClientRect();
@@ -87,40 +108,121 @@
     function rebuildEntities() {
       const dark = isDarkScheme();
       lastDark = dark;
+      const worldW = (!compact && pan.ww > 0) ? pan.ww : width;
+      const worldH = (!compact && pan.wh > 0) ? pan.wh : height;
       const rand = mulberry32(frostSeed);
 
-      // 1. Bokeh discs with distinct depth planes & natural palette
-      const discCount = compact ? 11 : 32;
-      bokehDiscs = [];
-      for (let i = 0; i < discCount; i++) {
-        const depth = 0.28 + rand() * 0.72;
-        const baseR = (compact ? 12 : 44) + rand() * (compact ? 22 : 118) * depth;
-        const toneRoll = rand();
-        const warmLimit = easterEgg === 'golden_bokeh' ? 0.65 : 0.38;
-        const tone = toneRoll < warmLimit ? 'warm' : (toneRoll < 0.76 ? 'cool' : 'sage');
-        bokehDiscs.push({
-          x: rand() * width,
-          y: rand() * height,
-          r: baseR,
-          depth: depth,
-          vx: (rand() - 0.5) * (compact ? 5 : 11) * depth,
-          vy: (rand() - 0.5) * (compact ? 4 : 8) * depth,
+      // 1. Komorebi (窗棂树影): World-space canopy boughs (including cross-bezel overhang!), Tyndall dust & drifting leaves
+      sunBranches = [];
+      const boughConfigs = [];
+      if (compact) {
+        boughConfigs.push(
+          { ax: -width * 0.08, ay: height * 0.05, tx: width * 0.52, ty: height * 0.42, layer: 1 },
+          { ax: width * 0.65, ay: -height * 0.06, tx: width * 0.25, ty: height * 0.52, layer: 0 }
+        );
+      } else {
+        const scrList = (pan.screens && pan.screens.length > 0)
+          ? pan.screens
+          : [{ x: 0, y: 0, w: width, h: height, primary: true }];
+        for (let sIdx = 0; sIdx < scrList.length; sIdx++) {
+          const sr = scrList[sIdx];
+          if (sr.primary === false) {
+            // High-window / side-window airy corner boughs on Secondary Screens (keeps central clock 100% open & serene!)
+            boughConfigs.push(
+              { ax: sr.x + sr.w * 1.03, ay: sr.y - sr.h * 0.03, tx: sr.x + sr.w * 0.70, ty: sr.y + sr.h * 0.26, layer: 0 },
+              { ax: sr.x + sr.w * 0.90, ay: sr.y - sr.h * 0.04, tx: sr.x + sr.w * 0.66, ty: sr.y + sr.h * 0.19, layer: 1 }
+            );
+            continue;
+          }
+          boughConfigs.push(
+            { ax: sr.x - sr.w * 0.06, ay: sr.y + sr.h * 0.16, tx: sr.x + sr.w * 0.46, ty: sr.y + sr.h * 0.48, layer: 0 },
+            { ax: sr.x + sr.w * 1.05, ay: sr.y + sr.h * 0.08, tx: sr.x + sr.w * 0.56, ty: sr.y + sr.h * 0.40, layer: 0 },
+            { ax: sr.x - sr.w * 0.04, ay: sr.y - sr.h * 0.03, tx: sr.x + sr.w * 0.38, ty: sr.y + sr.h * 0.34, layer: 1 },
+            { ax: sr.x + sr.w * 0.78, ay: sr.y - sr.h * 0.05, tx: sr.x + sr.w * 0.44, ty: sr.y + sr.h * 0.26, layer: 1 },
+            { ax: sr.x + sr.w * 1.04, ay: sr.y + sr.h * 0.28, tx: sr.x + sr.w * 0.68, ty: sr.y + sr.h * 0.62, layer: 1 }
+          );
+        }
+      }
+
+      for (let b = 0; b < boughConfigs.length; b++) {
+        const cfg = boughConfigs[b];
+        const clusters = [];
+        const clusterCount = compact ? 4 : 7;
+        for (let k = 0; k < clusterCount; k++) {
+          const tFrac = 0.24 + (k / Math.max(1, clusterCount - 1)) * 0.74;
+          const twigSide = (k % 2 === 0 ? 1 : -1);
+          const subLeaves = [];
+          const triplet = 2 + Math.floor(rand() * 2);
+          for (let j = 0; j < triplet; j++) {
+            const fan = (j - (triplet - 1) * 0.5) * (0.52 + rand() * 0.18);
+            subLeaves.push({
+              fanAng: fan,
+              len: (compact ? 10 : 28) + rand() * (compact ? 6 : 18) * (cfg.layer === 0 ? 1.30 : 1.0),
+              wid: (compact ? 4.2 : 10.5) + rand() * (compact ? 2.0 : 5.0) * (cfg.layer === 0 ? 1.25 : 1.0),
+              phase: rand() * Math.PI * 2,
+              flutter: 0.75 + rand() * 0.65
+            });
+          }
+          clusters.push({
+            t: Math.min(1.0, tFrac + (rand() - 0.5) * 0.07),
+            twigAng: twigSide * (0.42 + rand() * 0.35),
+            twigLen: (compact ? 10 : 34) * (1.18 - tFrac * 0.42) * (0.75 + rand() * 0.45),
+            leaves: subLeaves
+          });
+        }
+        sunBranches.push({
+          ax: cfg.ax,
+          ay: cfg.ay,
+          cx: (cfg.ax + cfg.tx) * 0.5 + (rand() - 0.5) * (compact ? 14 : 64),
+          cy: (cfg.ay + cfg.ty) * 0.5 - (compact ? 8 : 38),
+          tx: cfg.tx,
+          ty: cfg.ty,
+          layer: cfg.layer,
           phase: rand() * Math.PI * 2,
-          tone: tone,
-          alpha: (compact ? 0.22 : 0.16) + rand() * (compact ? 0.18 : 0.18)
+          clusters: clusters
         });
       }
 
-      // 2. Mist micro-beads & gravity droplets
+      const screenMult = (!compact && pan.screens && pan.screens.length > 1) ? pan.screens.length : 1;
+      const moteCount = compact ? 8 : (26 * screenMult);
+      sunMotes = [];
+      for (let i = 0; i < moteCount; i++) {
+        sunMotes.push({
+          x0: rand() * worldW,
+          y0: rand() * worldH,
+          r: (compact ? 0.9 : 1.3) + rand() * (compact ? 1.1 : 2.0),
+          vx: 4 + rand() * 7,
+          vy: -4 - rand() * 6,
+          phase: rand() * Math.PI * 2,
+          alpha: 0.22 + rand() * 0.38
+        });
+      }
+
+      const driftCount = compact ? 1 : (3 * screenMult + 1);
+      driftingLeaves = [];
+      for (let i = 0; i < driftCount; i++) {
+        driftingLeaves.push({
+          x0: rand() * worldW,
+          y0: rand() * worldH,
+          len: (compact ? 8 : 21) + rand() * (compact ? 3 : 8),
+          wid: (compact ? 3.2 : 7.8) + rand() * 2.5,
+          vy: (compact ? 8 : 19) + rand() * 9,
+          vx: (compact ? 5 : 22) + rand() * 14,
+          swayPhase: rand() * Math.PI * 2
+        });
+      }
+
+      // 2. Mist micro-beads & gravity droplets (local viewport seeded by viewport offset so multi-screens never clone!)
+      const localRand = mulberry32((frostSeed ^ ((pan.vx * 73856093) | 0) ^ ((pan.vy * 19349663) | 0)) >>> 0);
       const beadCount = compact ? 36 : 190;
       mistBeads = [];
       for (let i = 0; i < beadCount; i++) {
         mistBeads.push({
-          x: rand() * width,
-          y: rand() * height,
-          r: (compact ? 0.9 : 1.2) + rand() * (compact ? 1.8 : 3.2),
-          alpha: 0.24 + rand() * 0.34,
-          phase: rand() * Math.PI * 2
+          x: localRand() * width,
+          y: localRand() * height,
+          r: (compact ? 0.9 : 1.2) + localRand() * (compact ? 1.8 : 3.2),
+          alpha: 0.24 + localRand() * 0.34,
+          phase: localRand() * Math.PI * 2
         });
       }
 
@@ -128,17 +230,17 @@
       droplets = [];
       for (let i = 0; i < dropCount; i++) {
         droplets.push({
-          x: width * (0.06 + rand() * 0.88),
-          y: rand() * height * 0.75,
-          r: (compact ? 2.4 : 4.0) + rand() * (compact ? 1.8 : 4.2),
-          speed: (compact ? 9 : 18) + rand() * (compact ? 12 : 30),
-          wobble: rand() * Math.PI * 2,
-          wait: rand() * 4.5,
+          x: width * (0.06 + localRand() * 0.88),
+          y: localRand() * height * 0.75,
+          r: (compact ? 2.4 : 4.0) + localRand() * (compact ? 1.8 : 4.2),
+          speed: (compact ? 9 : 18) + localRand() * (compact ? 12 : 30),
+          wobble: localRand() * Math.PI * 2,
+          wait: localRand() * 4.5,
           trailLen: compact ? 10 : 36
         });
       }
 
-      // 3. Pre-baked dual-pass fractal frost texture & vellum tracing-paper texture
+      // 3. Pre-baked dual-pass fractal frost texture & vellum tracing-paper texture (local screen size = minimal VRAM!)
       bakeFrostTexture(dark);
       bakeVellumTexture(dark);
     }
@@ -151,13 +253,13 @@
       const vctx = off.getContext('2d');
       vctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      // A · Kindle E-ink Warm Paper (84% luminance #DFDAD0 in Light; Soft Slate Chalkboard #32363B in Dark — zero glare on 27" monitors!)
-      vctx.fillStyle = dark ? 'rgba(50, 54, 59, 0.88)' : 'rgba(223, 218, 208, 0.88)';
+      // Airy translucent Washi / vellum tracing paper (~56% opacity so frosted desktop breathes gently underneath)
+      vctx.fillStyle = dark ? 'rgba(38, 42, 47, 0.58)' : 'rgba(238, 234, 226, 0.56)';
       vctx.fillRect(0, 0, width, height);
 
-      const rand = mulberry32(frostSeed + 31337);
-      // Subtle tactile paper fibers
-      const fiberCount = compact ? 90 : 520;
+      const rand = mulberry32(((frostSeed + 31337) ^ ((pan.vx * 2654435) | 0)) >>> 0);
+      // Whisper-fine paper fibers
+      const fiberCount = compact ? 70 : 380;
       vctx.lineCap = 'round';
       for (let i = 0; i < fiberCount; i++) {
         const fx = rand() * width;
@@ -165,8 +267,8 @@
         const len = 4 + rand() * 12;
         const ang = rand() * Math.PI * 2;
         vctx.strokeStyle = dark
-          ? 'rgba(228, 223, 211,' + (0.022 + rand() * 0.026).toFixed(3) + ')'
-          : 'rgba(116, 110, 100,' + (0.026 + rand() * 0.032).toFixed(3) + ')';
+          ? 'rgba(228, 223, 211,' + (0.015 + rand() * 0.018).toFixed(3) + ')'
+          : 'rgba(116, 110, 100,' + (0.016 + rand() * 0.020).toFixed(3) + ')';
         vctx.lineWidth = 0.65;
         vctx.beginPath();
         vctx.moveTo(fx, fy);
@@ -235,7 +337,7 @@
       const fctx = off.getContext('2d');
       fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      const rand = mulberry32(frostSeed + 7919);
+      const rand = mulberry32(((frostSeed + 7919) ^ ((pan.vx * 7385609) | 0)) >>> 0);
 
       // Perimeter glacial frost gradient: keeps blurred desktop silhouettes perceptible in center
       // while building unmistakable icy frost depth around all 4 edges & corners
@@ -337,143 +439,239 @@
       frostOffscreen = off;
     }
 
-    function renderBokeh(nowMs, dtSec, dark, thawFrac) {
-      const t = nowMs / 1000;
-      const b = breathCurve(t);
-      const amp = mood === 'dnd' ? 0.35 : 1.0;
+    function drawBotanicalLeaf(x, y, ang, len, wid, scaleX) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(ang);
+      ctx.scale(1, scaleX);
+      ctx.beginPath();
+      ctx.moveTo(-len * 0.12, 0);
+      ctx.quadraticCurveTo(len * 0.36, -wid, len, 0);
+      ctx.quadraticCurveTo(len * 0.36, wid, -len * 0.12, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
 
-      // Subtle photographic aperture vignette over real blurred desktop; deepens in Sealed Mode
-      const grad = ctx.createRadialGradient(width * 0.5, height * 0.48, Math.min(width, height) * 0.12, width * 0.5, height * 0.5, Math.max(width, height) * 0.78);
-      if (dark) {
-        grad.addColorStop(0, deepSeal ? 'rgba(18, 24, 34, 0.34)' : 'rgba(20, 28, 38, 0.04)');
-        grad.addColorStop(1, deepSeal ? 'rgba(10, 14, 22, 0.68)' : 'rgba(10, 14, 22, 0.38)');
+    function renderSunlight(simSec, nowMs, dtSec, dark, thawFrac) {
+      const t = simSec;
+      const elapsedSec = (nowMs - modeEnteredAt) / 1000;
+      const grow = Math.min(1, 0.30 + (elapsedSec / 1.3) * 0.70);
+      const vis = grow * (1 - thawFrac);
+      if (vis <= 0.005) return;
+
+      const worldW = (!compact && pan.ww > 0) ? pan.ww : width;
+      const worldH = (!compact && pan.wh > 0) ? pan.wh : height;
+      const offX = compact ? 0 : pan.vx;
+      const offY = compact ? 0 : pan.vy;
+
+      const b = breathCurve(t);
+      const amp = mood === 'dnd' ? 0.45 : 1.0;
+
+      ctx.save();
+
+      // 1. Breathable Translucent Sunlit / Moonlit Frosted Veil
+      if (deepSeal) {
+        ctx.fillStyle = dark
+          ? 'rgba(22, 27, 36,' + (0.50 * vis).toFixed(3) + ')'
+          : 'rgba(240, 236, 227,' + (0.46 * vis).toFixed(3) + ')';
+        ctx.fillRect(0, 0, width, height);
       } else {
-        grad.addColorStop(0, deepSeal ? 'rgba(232, 238, 244, 0.40)' : 'rgba(32, 48, 64, 0.02)');
-        grad.addColorStop(1, deepSeal ? 'rgba(196, 210, 224, 0.62)' : 'rgba(56, 78, 100, 0.20)');
+        const veil = ctx.createLinearGradient(0, 0, width, height);
+        if (dark) {
+          veil.addColorStop(0, 'rgba(24, 32, 44,' + (0.14 * vis).toFixed(3) + ')');
+          veil.addColorStop(1, 'rgba(14, 18, 26,' + (0.20 * vis).toFixed(3) + ')');
+        } else {
+          veil.addColorStop(0, 'rgba(248, 243, 232,' + (0.12 * vis).toFixed(3) + ')');
+          veil.addColorStop(1, 'rgba(232, 226, 214,' + (0.10 * vis).toFixed(3) + ')');
+        }
+        ctx.fillStyle = veil;
+        ctx.fillRect(0, 0, width, height);
       }
-      ctx.fillStyle = grad;
+
+      // Panoramic directional sunlight / moonlight bloom anchored in unified world space
+      const sunGlow = ctx.createRadialGradient(
+        worldW * 0.18 - offX, worldH * 0.14 - offY, 10,
+        worldW * 0.26 - offX, worldH * 0.24 - offY, Math.max(worldW, worldH) * 0.85
+      );
+      if (dark) {
+        sunGlow.addColorStop(0, 'rgba(236, 212, 182,' + ((deepSeal ? 0.14 : 0.10) * vis).toFixed(3) + ')');
+        sunGlow.addColorStop(0.48, 'rgba(138, 168, 204,' + ((deepSeal ? 0.06 : 0.04) * vis).toFixed(3) + ')');
+      } else {
+        sunGlow.addColorStop(0, 'rgba(255, 250, 236,' + ((deepSeal ? 0.28 : 0.18) * vis).toFixed(3) + ')');
+        sunGlow.addColorStop(0.52, 'rgba(246, 234, 208,' + ((deepSeal ? 0.11 : 0.07) * vis).toFixed(3) + ')');
+      }
+      sunGlow.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = sunGlow;
       ctx.fillRect(0, 0, width, height);
 
-      // Sealed mode expands bokeh circles of confusion; wake triggers Rack Focus contraction
-      const sealBoost = deepSeal ? 1.36 : 1.0;
-      const focusScale = Math.max(0.12, sealBoost * (1 - thawFrac * 0.80) * (0.93 + b * 0.12 * amp));
+      // 2. Panoramic Venetian Blind Louvers & Sunbeams (tilted 25 deg — pixel-aligned across all monitor bezels!)
+      ctx.save();
+      ctx.translate(worldW * 0.5 - offX, worldH * 0.5 - offY);
+      ctx.rotate(-0.42);
+      const diag = Math.hypot(worldW, worldH) * 1.25;
+      const period = compact ? (Math.hypot(width, height) * 1.25 / 5) : 186;
+      const slatCount = Math.ceil((diag * 0.65) / period) + 1;
+      const openRatio = Math.min(0.92, (0.56 + b * 0.08 * amp) + thawFrac * 0.36);
+      const driftOffset = Math.sin(t * 0.14) * (period * 0.14);
 
-      for (let i = 0; i < bokehDiscs.length; i++) {
-        const d = bokehDiscs[i];
-        d.x += (d.vx + breezeVelX * d.depth * 22) * dtSec;
-        d.y += d.vy * dtSec;
-        if (d.x < -d.r) d.x = width + d.r;
-        if (d.x > width + d.r) d.x = -d.r;
-        if (d.y < -d.r) d.y = height + d.r;
-        if (d.y > height + d.r) d.y = -d.r;
+      for (let s = -slatCount; s <= slatCount; s++) {
+        const y0 = s * period + driftOffset;
+        const beamH = period * openRatio;
+        const slatShadowH = period - beamH;
 
-        const r = d.r * focusScale;
-        const pulse = 0.84 + 0.16 * Math.sin(t * 0.75 + d.phase);
-        const alpha = d.alpha * pulse * (1 - thawFrac);
+        const bg = ctx.createLinearGradient(0, y0, 0, y0 + beamH);
+        const litAlpha = (deepSeal ? (dark ? 0.08 : 0.22) : (dark ? 0.06 : 0.15)) * vis;
+        const litRgb = dark ? '242, 224, 198' : '255, 252, 242';
+        bg.addColorStop(0, 'rgba(' + litRgb + ',0)');
+        bg.addColorStop(0.18, 'rgba(' + litRgb + ',' + litAlpha.toFixed(3) + ')');
+        bg.addColorStop(0.82, 'rgba(' + litRgb + ',' + (litAlpha * 0.88).toFixed(3) + ')');
+        bg.addColorStop(1, 'rgba(' + litRgb + ',0)');
+        ctx.fillStyle = bg;
+        ctx.fillRect(-diag * 0.65, y0, diag * 1.3, beamH);
 
-        let rgb, rimRgb;
-        if (d.tone === 'warm') {
-          rgb = dark ? '224, 174, 126' : '212, 146, 86';
-          rimRgb = dark ? '252, 220, 186' : '232, 176, 120';
-        } else if (d.tone === 'sage') {
-          rgb = dark ? '132, 184, 166' : '96, 152, 134';
-          rimRgb = dark ? '194, 232, 218' : '128, 180, 162';
-        } else {
-          rgb = dark ? '138, 188, 216' : '92, 144, 184';
-          rimRgb = dark ? '206, 236, 252' : '132, 178, 212';
+        const sg = ctx.createLinearGradient(0, y0 + beamH, 0, y0 + period);
+        const shAlpha = (deepSeal ? (dark ? 0.18 : 0.085) : (dark ? 0.11 : 0.055)) * vis * (1 - thawFrac);
+        const shRgb = dark ? '8, 12, 18' : '116, 110, 96';
+        sg.addColorStop(0, 'rgba(' + shRgb + ',0)');
+        sg.addColorStop(0.26, 'rgba(' + shRgb + ',' + shAlpha.toFixed(3) + ')');
+        sg.addColorStop(0.74, 'rgba(' + shRgb + ',' + shAlpha.toFixed(3) + ')');
+        sg.addColorStop(1, 'rgba(' + shRgb + ',0)');
+        ctx.fillStyle = sg;
+        ctx.fillRect(-diag * 0.65, y0 + beamH, diag * 1.3, slatShadowH);
+      }
+
+      const mullionW = compact ? 7 : 24;
+      const mullionX = -diag * 0.12;
+      const mg = ctx.createLinearGradient(mullionX - mullionW, 0, mullionX + mullionW, 0);
+      const mAlpha = (deepSeal ? (dark ? 0.17 : 0.08) : (dark ? 0.10 : 0.05)) * vis;
+      const mRgb = dark ? '10, 14, 22' : '112, 106, 92';
+      mg.addColorStop(0, 'rgba(' + mRgb + ',0)');
+      mg.addColorStop(0.5, 'rgba(' + mRgb + ',' + mAlpha.toFixed(3) + ')');
+      mg.addColorStop(1, 'rgba(' + mRgb + ',0)');
+      ctx.fillStyle = mg;
+      ctx.fillRect(mullionX - mullionW, -diag * 0.65, mullionW * 2, diag * 1.3);
+      ctx.restore();
+
+      // 3. Swaying World-Space Canopy Boughs (frustum-culled to local viewport!)
+      for (let pass = 0; pass <= 1; pass++) {
+        ctx.save();
+        ctx.translate(-offX, -offY);
+        const penumbraBlur = compact ? (pass === 0 ? 3 : 1.5) : (pass === 0 ? 11 : 5);
+        for (let i = 0; i < sunBranches.length; i++) {
+          const br = sunBranches[i];
+          if (br.layer !== pass) continue;
+          const minBX = Math.min(br.ax, br.tx) - 90;
+          const maxBX = Math.max(br.ax, br.tx) + 90;
+          if (!compact && (maxBX < offX || minBX > offX + width)) continue;
+
+          const wind = Math.sin(t * 0.85 + br.phase) * (compact ? 4 : 15)
+            + Math.sin(t * 1.65 + br.phase * 1.7) * (compact ? 2 : 7)
+            + breezeVelX * (compact ? 7 : 32) * (pass === 1 ? 1.15 : 0.75);
+          const windY = Math.cos(t * 0.72 + br.phase) * (compact ? 2.5 : 9) + Math.abs(breezeVelX) * 6;
+
+          const cx = br.cx + wind * 0.55;
+          const cy = br.cy + windY * 0.55;
+          const tx = br.tx + wind;
+          const ty = br.ty + windY;
+
+          const shadowAlpha = pass === 0
+            ? (deepSeal ? (dark ? 0.15 : 0.08) : (dark ? 0.10 : 0.058)) * vis
+            : (deepSeal ? (dark ? 0.24 : 0.13) : (dark ? 0.16 : 0.095)) * vis;
+          const shadowRgb = dark ? '8, 12, 19' : (pass === 0 ? '114, 108, 90' : '78, 76, 62');
+          const shadowCol = 'rgba(' + shadowRgb + ',' + shadowAlpha.toFixed(3) + ')';
+
+          ctx.shadowColor = shadowCol;
+          ctx.shadowBlur = penumbraBlur;
+          ctx.strokeStyle = 'rgba(' + shadowRgb + ',' + (shadowAlpha * 0.85).toFixed(3) + ')';
+          ctx.fillStyle = shadowCol;
+          ctx.lineCap = 'round';
+          ctx.lineWidth = compact ? (pass === 0 ? 2.4 : 1.7) : (pass === 0 ? 5.5 : 3.6);
+
+          ctx.beginPath();
+          ctx.moveTo(br.ax, br.ay);
+          ctx.quadraticCurveTo(cx, cy, tx, ty);
+          ctx.stroke();
+
+          for (let k = 0; k < br.clusters.length; k++) {
+            const cl = br.clusters[k];
+            const u = cl.t;
+            const inv = 1 - u;
+            const bx = inv * inv * br.ax + 2 * inv * u * cx + u * u * tx;
+            const by = inv * inv * br.ay + 2 * inv * u * cy + u * u * ty;
+            const dtx = 2 * inv * (cx - br.ax) + 2 * u * (tx - cx);
+            const dty = 2 * inv * (cy - br.ay) + 2 * u * (ty - cy);
+            const bAng = Math.atan2(dty, dtx);
+
+            const twigDir = bAng + cl.twigAng + Math.sin(t * 1.1 + k) * 0.06 + breezeVelX * 0.12;
+            const tipX = bx + Math.cos(twigDir) * cl.twigLen;
+            const tipY = by + Math.sin(twigDir) * cl.twigLen;
+
+            ctx.lineWidth = compact ? 1.0 : 2.0;
+            ctx.beginPath();
+            ctx.moveTo(bx, by);
+            ctx.quadraticCurveTo((bx + tipX) * 0.5, (by + tipY) * 0.5 - 3, tipX, tipY);
+            ctx.stroke();
+
+            for (let j = 0; j < cl.leaves.length; j++) {
+              const lf = cl.leaves[j];
+              const flutterAng = twigDir + lf.fanAng
+                + Math.sin(t * (1.35 * lf.flutter) + lf.phase) * 0.15
+                + breezeVelX * 0.22 * lf.flutter;
+              const foreshorten = 0.68 + 0.32 * Math.cos(t * 1.05 + lf.phase);
+              drawBotanicalLeaf(tipX, tipY, flutterAng, lf.len, lf.wid, foreshorten);
+            }
+          }
         }
+        ctx.restore();
+      }
 
-        const rg = ctx.createRadialGradient(d.x, d.y, r * 0.10, d.x, d.y, r);
-        rg.addColorStop(0, 'rgba(' + rgb + ',' + (alpha * 0.34).toFixed(3) + ')');
-        rg.addColorStop(0.72, 'rgba(' + rgb + ',' + (alpha * 0.56).toFixed(3) + ')');
-        rg.addColorStop(0.90, 'rgba(' + rimRgb + ',' + (alpha * 1.15).toFixed(3) + ')');
-        rg.addColorStop(1, 'rgba(' + rgb + ',0)');
+      // 4. Closed-Form Cross-Screen Drifting Leaves (float seamlessly from Monitor 1 onto Monitor 2!)
+      const spanW = worldW + 120;
+      const spanH = worldH + 90;
+      for (let i = 0; i < driftingLeaves.length; i++) {
+        const dl = driftingLeaves[i];
+        const gx = (((dl.x0 + dl.vx * t + Math.sin(t * 1.1 + dl.swayPhase) * (compact ? 8 : 28)) % spanW) + spanW) % spanW - 60;
+        const gy = (((dl.y0 + dl.vy * t) % spanH) + spanH) % spanH - 45;
+        const lx = gx - offX;
+        const ly = gy - offY;
+        if (lx < -45 || lx > width + 45 || ly < -45 || ly > height + 45) continue;
 
-        ctx.fillStyle = rg;
+        const leafAlpha = (deepSeal ? (dark ? 0.26 : 0.14) : (dark ? 0.16 : 0.09)) * vis;
+        ctx.fillStyle = dark
+          ? 'rgba(10, 14, 22,' + leafAlpha.toFixed(3) + ')'
+          : 'rgba(88, 84, 68,' + leafAlpha.toFixed(3) + ')';
+        const rockAng = 0.4 + Math.sin(t * 1.5 + dl.swayPhase) * 0.55;
+        const tumble = 0.45 + 0.55 * Math.abs(Math.cos(t * 1.8 + dl.swayPhase));
+        drawBotanicalLeaf(lx, ly, rockAng, dl.len, dl.wid, tumble);
+      }
+
+      // 5. Closed-Form Cross-Screen Tyndall Dust Motes (frustum-culled!)
+      const mSpanW = worldW + 40;
+      const mSpanH = worldH + 40;
+      for (let i = 0; i < sunMotes.length; i++) {
+        const m = sunMotes[i];
+        const gx = (((m.x0 + m.vx * t) % mSpanW) + mSpanW) % mSpanW - 20;
+        const gy = (((m.y0 + m.vy * t + Math.sin(t * 0.9 + m.phase) * 10) % mSpanH) + mSpanH) % mSpanH - 20;
+        const mx = gx - offX;
+        const my = gy - offY;
+        if (mx < -10 || mx > width + 10 || my < -10 || my > height + 10) continue;
+
+        const twinkle = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t * 1.6 + m.phase));
+        const ma = m.alpha * twinkle * vis;
+        ctx.fillStyle = dark
+          ? 'rgba(248, 226, 190,' + (ma * 0.65).toFixed(3) + ')'
+          : 'rgba(255, 252, 238,' + (ma * 0.95).toFixed(3) + ')';
         ctx.beginPath();
-        ctx.arc(d.x, d.y, r, 0, Math.PI * 2);
+        ctx.arc(mx, my, m.r, 0, Math.PI * 2);
         ctx.fill();
       }
 
-      // Turrell Solar Orbit & Celestial Dial in Big-Screen Sealed Mode!
-      if (deepSeal && !compact) {
-        const vis = Math.max(0, 1 - thawFrac * 1.3);
-        if (vis > 0.01) {
-          const cx = width * 0.5;
-          const cy = height * 0.44;
-          const R = Math.min(width * 0.28, height * 0.30, 260);
-          // Smooth continuous 60-second celestial orbit synced to real seconds + ms
-          const nowDate = new Date();
-          const secFrac = (nowDate.getSeconds() + nowDate.getMilliseconds() / 1000) / 60;
-          const angle = secFrac * Math.PI * 2 - Math.PI * 0.5;
-          const sx = cx + Math.cos(angle) * R;
-          const sy = cy + Math.sin(angle) * R;
-
-          ctx.save();
-          ctx.globalAlpha = vis;
-
-          // Rotating Turrell atmospheric radial light spill following the sun pearl
-          const spill = ctx.createRadialGradient(sx, sy, 4, cx, cy, R * 1.85);
-          if (dark) {
-            spill.addColorStop(0, 'rgba(255, 190, 134, 0.34)');
-            spill.addColorStop(0.42, 'rgba(226, 136, 98, 0.12)');
-            spill.addColorStop(0.80, 'rgba(84, 140, 174, 0.06)');
-          } else {
-            spill.addColorStop(0, 'rgba(244, 162, 102, 0.32)');
-            spill.addColorStop(0.45, 'rgba(224, 138, 94, 0.12)');
-            spill.addColorStop(0.82, 'rgba(92, 146, 176, 0.06)');
-          }
-          spill.addColorStop(1, 'rgba(0,0,0,0)');
-          ctx.fillStyle = spill;
-          ctx.fillRect(0, 0, width, height);
-
-          // 60 fine celestial dial ticks
-          for (let k = 0; k < 60; k++) {
-            const a = (k / 60) * Math.PI * 2;
-            const major = k % 5 === 0;
-            const r1 = R - (major ? 7 : 3.5);
-            const r2 = R + (major ? 7 : 3.5);
-            ctx.strokeStyle = dark
-              ? (major ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.10)')
-              : (major ? 'rgba(36,52,68,0.26)' : 'rgba(36,52,68,0.10)');
-            ctx.lineWidth = major ? 1.3 : 0.85;
-            ctx.beginPath();
-            ctx.moveTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1);
-            ctx.lineTo(cx + Math.cos(a) * r2, cy + Math.sin(a) * r2);
-            ctx.stroke();
-          }
-
-          // Main hairline orbital ring
-          ctx.strokeStyle = dark ? 'rgba(255,255,255,0.18)' : 'rgba(36,52,68,0.16)';
-          ctx.lineWidth = 1.1;
-          ctx.beginPath();
-          ctx.arc(cx, cy, R, 0, Math.PI * 2);
-          ctx.stroke();
-
-          // Luminous trailing comet arc behind sun pearl
-          ctx.strokeStyle = dark ? 'rgba(255, 196, 146, 0.62)' : 'rgba(224, 130, 78, 0.62)';
-          ctx.lineWidth = 2.4;
-          ctx.lineCap = 'round';
-          ctx.beginPath();
-          ctx.arc(cx, cy, R, angle - 0.88, angle);
-          ctx.stroke();
-
-          // Glowing sun pearl
-          ctx.shadowColor = dark ? 'rgba(255, 180, 120, 0.92)' : 'rgba(230, 130, 75, 0.78)';
-          ctx.shadowBlur = 18;
-          ctx.fillStyle = dark ? '#FFE8CC' : '#EA8652';
-          ctx.beginPath();
-          ctx.arc(sx, sy, 5.8, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.shadowBlur = 0;
-
-          ctx.restore();
-        }
-      }
+      ctx.restore();
     }
 
-    function renderMist(nowMs, dtSec, dark, thawFrac) {
-      const t = nowMs / 1000;
+    function renderMist(simSec, nowMs, dtSec, dark, thawFrac) {
+      const t = simSec;
       const elapsedSec = (nowMs - modeEnteredAt) / 1000;
       const fogGrow = Math.min(1, elapsedSec / 1.6);
       const visibility = fogGrow * (1 - thawFrac);
@@ -483,9 +681,9 @@
       const cy = height * 0.5;
       const maxR = Math.hypot(cx, cy);
 
-      // Cool-tinted condensation layer; becomes dense creamy-cool privacy vapor in Sealed Mode
+      // Cool-tinted condensation layer; stays airy & translucent in Sealed Mode
       const fogGrad = ctx.createRadialGradient(cx, cy, maxR * 0.08, cx, cy, maxR * 1.05);
-      const density = deepSeal ? 1.55 : 1.0;
+      const density = deepSeal ? 1.12 : 0.88;
       if (dark) {
         fogGrad.addColorStop(0, 'rgba(182, 200, 214,' + Math.min(0.62, 0.10 * density * visibility).toFixed(3) + ')');
         fogGrad.addColorStop(0.60, 'rgba(176, 198, 216,' + Math.min(0.74, 0.26 * density * visibility).toFixed(3) + ')');
@@ -609,71 +807,83 @@
       ctx.restore();
 
       if (deepSeal && !compact) {
-        renderVitalityWave(nowMs, dark, visibility);
+        renderVitalityWave(simSec, dark, visibility);
       }
     }
 
-    function renderVitalityWave(nowMs, dark, vis) {
+    function renderVitalityWave(simSec, dark, vis) {
       if (vis <= 0.02) return;
-      const t = nowMs / 1000;
-      const leftX = width * 0.09;
-      const rightX = width * 0.91;
-      const span = rightX - leftX;
+      const t = simSec;
+      const worldW = (!compact && pan.ww > 0) ? pan.ww : width;
+      const offX = compact ? 0 : pan.vx;
+      const globalLeft = worldW * 0.06;
+      const globalRight = worldW * 0.94;
+      const span = Math.max(1, globalRight - globalLeft);
       const baseY = height * 0.885;
 
       ctx.save();
       ctx.globalAlpha = vis;
-      // Dual-layered silky background-task vitality waves
+      // Panoramic continuous vitality ribbon flowing seamlessly across all connected monitors!
       for (let layer = 0; layer < 2; layer++) {
         ctx.strokeStyle = layer === 0
           ? (dark ? 'rgba(156, 216, 248, 0.44)' : 'rgba(72, 126, 168, 0.36)')
           : (dark ? 'rgba(210, 238, 255, 0.22)' : 'rgba(92, 146, 184, 0.18)');
         ctx.lineWidth = layer === 0 ? 1.5 : 1.1;
         ctx.beginPath();
-        for (let x = leftX; x <= rightX; x += 5) {
-          const norm = (x - leftX) / span;
+        let started = false;
+        for (let lx = 0; lx <= width; lx += 5) {
+          const gx = offX + lx;
+          if (gx < globalLeft || gx > globalRight) continue;
+          const norm = (gx - globalLeft) / span;
           const env = Math.sin(norm * Math.PI);
           const phaseShift = layer * 1.4;
           const y = baseY
             + Math.sin(norm * 15 - t * 2.6 + phaseShift) * (layer === 0 ? 7.5 : 5.0) * env
             + Math.sin(norm * 8 + t * 1.5 - phaseShift) * 3.8 * env;
-          if (x === leftX) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
+          if (!started) {
+            ctx.moveTo(lx, y);
+            started = true;
+          } else {
+            ctx.lineTo(lx, y);
+          }
         }
-        ctx.stroke();
+        if (started) ctx.stroke();
       }
       ctx.restore();
     }
 
-    function renderWarmMatte(nowMs, dark, thawFrac) {
-      const t = nowMs / 1000;
+    function renderWarmMatte(simSec, nowMs, dark, thawFrac) {
+      const t = simSec;
       const elapsedSec = (nowMs - modeEnteredAt) / 1000;
       const grow = Math.min(1, 0.25 + (elapsedSec / 1.4) * 0.75);
       const alpha = grow * (1 - thawFrac);
       if (alpha <= 0.005) return;
 
+      const worldW = (!compact && pan.ww > 0) ? pan.ww : width;
+      const worldH = (!compact && pan.wh > 0) ? pan.wh : height;
+      const offX = compact ? 0 : pan.vx;
+      const offY = compact ? 0 : pan.vy;
+
       ctx.save();
       ctx.globalAlpha = alpha;
-      // E-ink Warm Matte Stone veil (~84% luminance in Light, zero floodlight glare on big monitors!)
-      ctx.fillStyle = dark ? 'rgba(28, 30, 34, 0.84)' : 'rgba(224, 220, 211, 0.86)';
+      ctx.fillStyle = dark ? 'rgba(26, 28, 33, 0.56)' : 'rgba(236, 233, 226, 0.52)';
       ctx.fillRect(0, 0, width, height);
 
-      // Slow organic warm apricot & sage depth orbs behind the Giant Glass Clock
       const clouds = [
-        { x: 0.28, y: 0.36, r: 0.36, warm: true, sp: 0.24 },
-        { x: 0.72, y: 0.58, r: 0.40, warm: false, sp: 0.19 },
-        { x: 0.50, y: 0.42, r: 0.28, warm: true, sp: 0.31 },
-        { x: 0.38, y: 0.66, r: 0.30, warm: false, sp: 0.27 }
+        { x: 0.24, y: 0.36, r: 0.38, warm: true, sp: 0.24 },
+        { x: 0.74, y: 0.58, r: 0.42, warm: false, sp: 0.19 },
+        { x: 0.50, y: 0.42, r: 0.32, warm: true, sp: 0.31 },
+        { x: 0.40, y: 0.66, r: 0.34, warm: false, sp: 0.27 }
       ];
       clouds.forEach(function (c, i) {
-        const px = width * c.x + Math.sin(t * c.sp + i * 2.1) * (width * 0.065);
-        const py = height * c.y + Math.cos(t * (c.sp * 0.85) + i * 1.4) * (height * 0.055);
-        const pr = Math.min(width, height) * c.r;
+        const px = (worldW * c.x + Math.sin(t * c.sp + i * 2.1) * (worldW * 0.06)) - offX;
+        const py = (worldH * c.y + Math.cos(t * (c.sp * 0.85) + i * 1.4) * (worldH * 0.055)) - offY;
+        const pr = Math.min(worldW, worldH) * c.r;
         const g = ctx.createRadialGradient(px, py, 0, px, py, pr);
         if (c.warm) {
-          g.addColorStop(0, dark ? 'rgba(220, 138, 102, 0.22)' : 'rgba(216, 138, 98, 0.24)');
+          g.addColorStop(0, dark ? 'rgba(220, 152, 120, 0.09)' : 'rgba(224, 166, 134, 0.095)');
         } else {
-          g.addColorStop(0, dark ? 'rgba(116, 168, 150, 0.18)' : 'rgba(108, 156, 140, 0.20)');
+          g.addColorStop(0, dark ? 'rgba(126, 174, 158, 0.075)' : 'rgba(124, 168, 154, 0.08)');
         }
         g.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = g;
@@ -692,29 +902,30 @@
       ctx.save();
       ctx.globalAlpha = alpha;
       if (thawFrac > 0) {
-        // Gentle translucent paper lift upward on wake
         ctx.translate(0, -thawFrac * 24);
       }
       ctx.drawImage(vellumOffscreen, 0, 0, width, height);
       ctx.restore();
     }
 
-    function renderFrost(nowMs, dark, thawFrac) {
+    function renderFrost(simSec, nowMs, dark, thawFrac) {
       if (!frostOffscreen) return;
       const elapsedSec = (nowMs - modeEnteredAt) / 1000;
       const grow = Math.min(1, 0.22 + (elapsedSec / 2.0) * 0.78);
       const easedGrow = 1 - Math.pow(1 - grow, 3);
+      const worldW = (!compact && pan.ww > 0) ? pan.ww : width;
+      const offX = compact ? 0 : pan.vx;
 
       ctx.save();
       ctx.globalAlpha = easedGrow;
       ctx.drawImage(frostOffscreen, 0, 0, width, height);
 
-      // Sweeping iridescent aurora shimmer & drifting micro ice sparkles in Sealed Mode
-      const t = nowMs / 1000;
-      const sweepPos = ((t * 0.14) % 1.8) - 0.4;
+      // Panoramic iridescent aurora shimmer sweeping continuously from Monitor 1 across Monitor 2!
+      const t = simSec;
+      const sweepPos = ((t * 0.12) % 1.8) - 0.4;
       const sweepGrad = ctx.createLinearGradient(
-        width * (sweepPos - 0.28), 0,
-        width * (sweepPos + 0.28), height * 0.85
+        worldW * (sweepPos - 0.22) - offX, 0,
+        worldW * (sweepPos + 0.22) - offX, height * 0.85
       );
       const shimPeak = (deepSeal ? 0.22 : 0.08) * easedGrow * (1 - thawFrac);
       sweepGrad.addColorStop(0, 'rgba(255, 255, 255, 0)');
@@ -731,7 +942,7 @@
       if (deepSeal && !compact) {
         const sparkleVis = easedGrow * (1 - thawFrac);
         for (let s = 0; s < 24; s++) {
-          const sx = (((s * 0.137) + t * (0.008 + (s % 3) * 0.004)) % 1) * width;
+          const sx = (((s * 0.137 + pan.vx * 0.0003) + t * (0.008 + (s % 3) * 0.004)) % 1) * width;
           const sy = (((s * 0.219) + t * (0.014 + (s % 4) * 0.005)) % 1) * height;
           const twinkle = 0.25 + 0.75 * Math.abs(Math.sin(t * 1.8 + s * 1.9));
           ctx.fillStyle = dark
@@ -744,10 +955,9 @@
       }
 
       if (deepSeal && !compact) {
-        renderVitalityWave(nowMs, dark, easedGrow * (1 - thawFrac));
+        renderVitalityWave(simSec, dark, easedGrow * (1 - thawFrac));
       }
 
-      // Radial warm thaw from center outward (~0.82s)
       if (thawFrac > 0) {
         const cx = width * 0.5;
         const cy = height * 0.5;
@@ -763,7 +973,6 @@
         ctx.fillStyle = meltGrad;
         ctx.fillRect(0, 0, width, height);
 
-        // Warm luminous melt rim
         ctx.globalCompositeOperation = 'source-over';
         const rimAlpha = Math.sin(thawFrac * Math.PI) * 0.28;
         ctx.strokeStyle = dark
@@ -789,21 +998,10 @@
       const dtSec = Math.min(0.1, Math.max(0.008, (nowMs - lastFrameMs) / 1000));
       lastFrameMs = nowMs;
 
-      // Advance calm atmospheric breeze narrative envelope
-      breezeElapsed += dtSec;
-      if (breezeElapsed < breezeNextAt) {
-        breezeVelX = 0;
-      } else if (breezeElapsed < breezeNextAt + breezeDur) {
-        const prog = (breezeElapsed - breezeNextAt) / breezeDur;
-        // Smooth bell curve: 0 -> 1 -> 0 with zero jump
-        breezeVelX = breezeDir * Math.sin(prog * Math.PI);
-      } else {
-        breezeElapsed = 0;
-        breezeNextAt = 26 + Math.random() * 18;
-        breezeDur = 12 + Math.random() * 5;
-        breezeDir = Math.random() < 0.5 ? 1 : -1;
-        breezeVelX = 0;
-      }
+      const simSec = (!compact && pan.originMs > 0)
+        ? Math.max(0, (Date.now() - pan.originMs) / 1000)
+        : (nowMs / 1000);
+      breezeVelX = computeSyncedBreeze(simSec);
 
       let thawFrac = 0;
       if (thawing) {
@@ -813,22 +1011,45 @@
       ctx.clearRect(0, 0, width, height);
 
       if (mode === 'mist') {
-        renderMist(nowMs, dtSec, dark, thawFrac);
+        renderMist(simSec, nowMs, dtSec, dark, thawFrac);
       } else if (mode === 'frost') {
-        renderFrost(nowMs, dark, thawFrac);
+        renderFrost(simSec, nowMs, dark, thawFrac);
       } else if (mode === 'warm_matte') {
-        renderWarmMatte(nowMs, dark, thawFrac);
+        renderWarmMatte(simSec, nowMs, dark, thawFrac);
       } else if (mode === 'vellum') {
         renderVellum(nowMs, thawFrac);
       } else {
-        renderBokeh(nowMs, dtSec, dark, thawFrac);
+        renderSunlight(simSec, nowMs, dtSec, dark, thawFrac);
       }
     }
 
     return {
+      setPanoramic: function (nextPan) {
+        if (!nextPan) return;
+        const nextSeed = (Number(nextPan.seed) >>> 0) || frostSeed;
+        const changed =
+          nextSeed !== frostSeed ||
+          (nextPan.vx || 0) !== pan.vx ||
+          (nextPan.vy || 0) !== pan.vy ||
+          (nextPan.ww || 0) !== pan.ww ||
+          (nextPan.wh || 0) !== pan.wh;
+        frostSeed = nextSeed;
+        pan = {
+          vx: Number(nextPan.vx) || 0,
+          vy: Number(nextPan.vy) || 0,
+          ww: Number(nextPan.ww) || 0,
+          wh: Number(nextPan.wh) || 0,
+          originMs: Number(nextPan.originMs) || 0,
+          screens: Array.isArray(nextPan.screens) ? nextPan.screens : null
+        };
+        if (changed && width > 0 && height > 0) {
+          rebuildEntities();
+        }
+      },
       setMode: function (nextMode, nextMeta) {
         const meta = nextMeta || {};
-        const resolved = ['bokeh', 'mist', 'frost', 'warm_matte', 'vellum'].includes(nextMode) ? nextMode : 'bokeh';
+        const normalized = nextMode === 'bokeh' ? 'sunlight' : nextMode;
+        const resolved = ['sunlight', 'mist', 'frost', 'warm_matte', 'vellum'].includes(normalized) ? normalized : 'sunlight';
         if (resolved !== mode) {
           mode = resolved;
           modeEnteredAt = performance.now();
@@ -864,13 +1085,14 @@
       '</div>';
 
     const canvas = container.querySelector('.mn-nature-canvas');
-    const label = container.querySelector('.mn-breath-label');
-    const engine = createOpticalCanvas(canvas, { compact: true, mode: 'bokeh' });
+    const label = container.querySelector('.mn-nature-card-stage .mn-breath-label');
+    const engine = createOpticalCanvas(canvas, { compact: true, mode: 'sunlight' });
 
     return {
       setState: function (next) {
         const s = next || {};
-        const style = s.natureStyle && s.natureStyle !== 'auto' ? s.natureStyle : 'bokeh';
+        const raw = s.natureStyle && s.natureStyle !== 'auto' ? s.natureStyle : 'sunlight';
+        const style = raw === 'bokeh' ? 'sunlight' : raw;
         engine.setMode(style, { easterEgg: s.easterEgg, mood: s.mood });
       },
       update: function (nowMs) {

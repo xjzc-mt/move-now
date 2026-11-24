@@ -1,5 +1,6 @@
 import Cocoa
 import CoreGraphics
+import IOKit.ps
 
 struct SensorReading {
     let dtSec: Double
@@ -8,7 +9,11 @@ struct SensorReading {
     let mouseDeltaPx: Double
     let isMirroring: Bool
     let isFullscreenPresentation: Bool
+    let avoidingApp: String?
     let isLockedOrAsleep: Bool
+    let onBattery: Bool
+    let batteryPercent: Int
+    let lowPowerMode: Bool
     let dayKey: String
 
     func toDictionary() -> [String: Any] {
@@ -20,6 +25,9 @@ struct SensorReading {
             "isMirroring": isMirroring,
             "isFullscreenPresentation": isFullscreenPresentation,
             "isLockedOrAsleep": isLockedOrAsleep,
+            "onBattery": onBattery,
+            "batteryPercent": batteryPercent,
+            "lowPowerMode": lowPowerMode,
             "dayKey": dayKey
         ]
     }
@@ -28,9 +36,11 @@ struct SensorReading {
 @MainActor
 final class ActivityMonitor {
     private var lastMousePoint: NSPoint = NSEvent.mouseLocation
-    private var lastTickTime: CFAbsoluteTime = CFAbsoluteTimeGetCurrent()
+    private var lastTickUptime: TimeInterval = ProcessInfo.processInfo.systemUptime
     private var isScreenLocked: Bool = false
+    private var screenLockedMarkedAt: TimeInterval = 0
     private var isSystemAsleep: Bool = false
+    private var sleepMarkedAt: TimeInterval = 0
     private let dayFormatter: DateFormatter
 
     private let presentationBundleIDs: Set<String> = [
@@ -62,7 +72,10 @@ final class ActivityMonitor {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in self?.isScreenLocked = true }
+            Task { @MainActor in
+                self?.isScreenLocked = true
+                self?.screenLockedMarkedAt = ProcessInfo.processInfo.systemUptime
+            }
         }
         dnc.addObserver(
             forName: NSNotification.Name("com.apple.screenIsUnlocked"),
@@ -71,7 +84,7 @@ final class ActivityMonitor {
         ) { [weak self] _ in
             Task { @MainActor in
                 self?.isScreenLocked = false
-                self?.lastTickTime = CFAbsoluteTimeGetCurrent()
+                self?.lastTickUptime = ProcessInfo.processInfo.systemUptime
             }
         }
 
@@ -81,7 +94,10 @@ final class ActivityMonitor {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in self?.isSystemAsleep = true }
+            Task { @MainActor in
+                self?.isSystemAsleep = true
+                self?.sleepMarkedAt = ProcessInfo.processInfo.systemUptime
+            }
         }
         wsnc.addObserver(
             forName: NSWorkspace.didWakeNotification,
@@ -90,15 +106,16 @@ final class ActivityMonitor {
         ) { [weak self] _ in
             Task { @MainActor in
                 self?.isSystemAsleep = false
-                self?.lastTickTime = CFAbsoluteTimeGetCurrent()
+                self?.lastTickUptime = ProcessInfo.processInfo.systemUptime
             }
         }
     }
 
     func sample() -> SensorReading {
-        let now = CFAbsoluteTimeGetCurrent()
-        let dt = max(0.05, min(60.0, now - lastTickTime))
-        lastTickTime = now
+        // Monotonic uptime pauses during genuine system sleep and is immune to NTP wall-clock jumps
+        let now = ProcessInfo.processInfo.systemUptime
+        let dt = max(0.05, min(300.0, now - lastTickUptime))
+        lastTickUptime = now
 
         let keyIdle = CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: .keyDown)
         let mouseMoveIdle = CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: .mouseMoved)
@@ -116,19 +133,25 @@ final class ActivityMonitor {
         let mouseDelta = hypot(dx, dy)
         lastMousePoint = currentMouse
 
-        // Ground-truth live screen lock check + self-healing if a wake notification was ever missed
+        // Ground-truth live screen lock check:
+        // If session is unlocked and past the 2s notification race window, clear isScreenLocked immediately
+        // even if screenIsUnlocked notification was missed and user hasn't moved mouse yet.
         let sessionLocked = isSessionScreenLocked()
         if sessionLocked {
             isScreenLocked = true
-        } else if isScreenLocked && min(keyIdle, mouseIdle) < 5.0 {
+            screenLockedMarkedAt = now
+        } else if isScreenLocked && (min(keyIdle, mouseIdle) < 5.0 || (now - screenLockedMarkedAt) > 2.0) {
             isScreenLocked = false
         }
-        if isSystemAsleep && min(keyIdle, mouseIdle) < 3.0 {
+
+        // Self-heal isSystemAsleep if didWakeNotification was missed or sleep was aborted
+        if isSystemAsleep && (min(keyIdle, mouseIdle) < 3.0 || ((now - sleepMarkedAt) > 10.0 && dt < 5.0)) {
             isSystemAsleep = false
         }
 
         let mirroring = detectScreenMirroring()
-        let presentation = detectFullscreenPresentation()
+        let presentationApp = detectFullscreenPresentation()
+        let power = samplePowerState()
 
         return SensorReading(
             dtSec: dt,
@@ -136,17 +159,53 @@ final class ActivityMonitor {
             secondsSinceLastMouse: mouseIdle,
             mouseDeltaPx: mouseDelta,
             isMirroring: mirroring,
-            isFullscreenPresentation: presentation,
+            isFullscreenPresentation: presentationApp != nil,
+            avoidingApp: mirroring ? "mirroring" : presentationApp,
             isLockedOrAsleep: sessionLocked || isScreenLocked || isSystemAsleep,
+            onBattery: power.onBattery,
+            batteryPercent: power.batteryPercent,
+            lowPowerMode: power.lowPowerMode,
             dayKey: dayFormatter.string(from: Date())
         )
+    }
+
+    private func samplePowerState() -> (onBattery: Bool, batteryPercent: Int, lowPowerMode: Bool) {
+        let lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
+        guard let blob = IOPSCopyPowerSourcesInfo()?.takeRetainedValue(),
+              let list = IOPSCopyPowerSourcesList(blob)?.takeRetainedValue() as? [CFTypeRef],
+              !list.isEmpty else {
+            return (false, 100, lowPower)
+        }
+        var onBattery = false
+        var pct = 100
+        for ps in list {
+            guard let desc = IOPSGetPowerSourceDescription(blob, ps)?.takeUnretainedValue() as? [String: Any] else {
+                continue
+            }
+            if let state = desc[kIOPSPowerSourceStateKey as String] as? String,
+               state == (kIOPSBatteryPowerValue as String) {
+                onBattery = true
+            }
+            if let cur = desc[kIOPSCurrentCapacityKey as String] as? Int,
+               let maxCap = desc[kIOPSMaxCapacityKey as String] as? Int,
+               maxCap > 0 {
+                pct = max(0, min(100, Int(round(Double(cur) * 100.0 / Double(maxCap)))))
+            }
+        }
+        return (onBattery, pct, lowPower)
     }
 
     private func isSessionScreenLocked() -> Bool {
         guard let dict = CGSessionCopyCurrentDictionary() as? [String: Any] else {
             return false
         }
-        return (dict["CGSSessionScreenIsLocked"] as? Bool) ?? false
+        if let locked = dict["CGSSessionScreenIsLocked"] as? Bool, locked {
+            return true
+        }
+        if let onConsole = dict["kCGSSessionOnConsoleKey"] as? Bool, !onConsole {
+            return true
+        }
+        return false
     }
 
     private func detectScreenMirroring() -> Bool {
@@ -171,10 +230,45 @@ final class ActivityMonitor {
         "com.apple.loginwindow"
     ]
 
-    private func detectFullscreenPresentation() -> Bool {
+    private func quartzDisplayRects() -> [CGRect] {
+        var rects: [CGRect] = []
+        for screen in NSScreen.screens {
+            if let num = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber {
+                let displayID = CGDirectDisplayID(num.uint32Value)
+                let rect = CGDisplayBounds(displayID)
+                if rect.width > 0 && rect.height > 0 {
+                    rects.append(rect)
+                }
+            }
+        }
+        return rects
+    }
+
+    private func displayRect(containing bounds: CGRect, in displayRects: [CGRect]) -> CGRect? {
+        let center = CGPoint(x: bounds.midX, y: bounds.midY)
+        if let hit = displayRects.first(where: { $0.contains(center) }) {
+            return hit
+        }
+        // Fallback: display with largest intersection area
+        var best: CGRect?
+        var bestArea: CGFloat = 0
+        for rect in displayRects {
+            let inter = bounds.intersection(rect)
+            if !inter.isNull {
+                let area = inter.width * inter.height
+                if area > bestArea {
+                    bestArea = area
+                    best = rect
+                }
+            }
+        }
+        return best
+    }
+
+    private func detectFullscreenPresentation() -> String? {
         let myPID = ProcessInfo.processInfo.processIdentifier
         guard let frontApp = NSWorkspace.shared.frontmostApplication else {
-            return false
+            return nil
         }
         let frontPID = frontApp.processIdentifier
         let frontBundle = frontApp.bundleIdentifier ?? ""
@@ -184,10 +278,14 @@ final class ActivityMonitor {
             [.optionOnScreenOnly, .excludeDesktopElements],
             kCGNullWindowID
         ) as? [[String: Any]] else {
-            return false
+            return nil
         }
 
-        let screenBoundsList = NSScreen.screens.map { $0.frame }
+        // Use Quartz global display coordinates matching kCGWindowBounds exactly
+        let displayRects = quartzDisplayRects()
+        if displayRects.isEmpty {
+            return nil
+        }
 
         for win in windowList {
             guard let pid = win[kCGWindowOwnerPID as String] as? Int32, pid != myPID else {
@@ -217,23 +315,34 @@ final class ActivityMonitor {
                 continue
             }
 
-            let coversFullScreen = screenBoundsList.contains { frame in
-                bounds.width >= frame.width - 2 && bounds.height >= frame.height - 2
-            }
-            if !coversFullScreen {
+            // Match window against the EXACT display it occupies (fixes dual-screen false positive
+            // where a normal window on a 2K display was >= MacBook's smaller screen size).
+            // Requiring origin alignment (minX/minY within 4pt) also excludes regular maximized windows
+            // that sit below the macOS menu bar.
+            guard let hostDisplay = displayRect(containing: bounds, in: displayRects) else {
                 continue
             }
+            let coversOwnDisplay =
+                abs(bounds.minX - hostDisplay.minX) <= 4 &&
+                abs(bounds.minY - hostDisplay.minY) <= 4 &&
+                bounds.width >= hostDisplay.width - 4 &&
+                bounds.height >= hostDisplay.height - 4
+            if !coversOwnDisplay {
+                continue
+            }
+
+            let appLabel = bundleID.isEmpty ? ownerName : bundleID
 
             // Genuine slideshow shield layer (e.g. Keynote/PowerPoint full-screen presentation)
             if layer >= Int(CGWindowLevelForKey(.screenSaverWindow)) - 500 &&
                layer < Int(CGWindowLevelForKey(.screenSaverWindow)) {
-                return true
+                return appLabel
             }
-            // Frontmost presentation / meeting / video player app in full screen
+            // Frontmost presentation / meeting / video player app genuinely covering its entire display
             if pid == frontPID && (frontIsPresenter || (layer > 0 && layer < Int(CGWindowLevelForKey(.screenSaverWindow)))) {
-                return true
+                return appLabel
             }
         }
-        return false
+        return nil
     }
 }

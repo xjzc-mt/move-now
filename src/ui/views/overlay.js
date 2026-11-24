@@ -3,6 +3,80 @@
 
   const params = new URLSearchParams(window.location.search);
   const surfaceRole = params.get('role') || 'auto'; // 'auto' | 'pre_alert' | 'fullscreen' | 'secondary' | 'corner_card' | 'edge_frame' | 'edge_pill' | 'toast'
+  let isPrimaryScreen = params.get('primary') !== '0';
+
+  function parseScreensParam(raw) {
+    if (!raw) return null;
+    const parts = String(raw).split(',');
+    const list = [];
+    for (let i = 0; i < parts.length; i++) {
+      const segs = parts[i].split('_');
+      if (segs.length >= 4) {
+        list.push({
+          x: Number(segs[0]) || 0,
+          y: Number(segs[1]) || 0,
+          w: Math.max(1, Number(segs[2]) || 1280),
+          h: Math.max(1, Number(segs[3]) || 800),
+          primary: segs[4] === '1'
+        });
+      }
+    }
+    return list.length > 0 ? list : null;
+  }
+
+  const panState = {
+    isPrimary: isPrimaryScreen,
+    vx: Number(params.get('vx')) || 0,
+    vy: Number(params.get('vy')) || 0,
+    vw: Number(params.get('vw')) || 0,
+    vh: Number(params.get('vh')) || 0,
+    ww: Number(params.get('ww')) || 0,
+    wh: Number(params.get('wh')) || 0,
+    seed: Number(params.get('seed')) || 0,
+    originMs: Number(params.get('t0')) || 0,
+    screens: parseScreensParam(params.get('screens'))
+  };
+
+  let opticalEngine = null;
+  let roamingEngine = null;
+
+  function applyScreenRoleClass() {
+    document.body.classList.toggle('is-secondary-screen', !isPrimaryScreen);
+  }
+  applyScreenRoleClass();
+
+  window.__moveNowConfigureViewport = function (cfg) {
+    if (!cfg) return;
+    isPrimaryScreen = cfg.isPrimary !== false;
+    panState.isPrimary = isPrimaryScreen;
+    applyScreenRoleClass();
+    panState.vx = Number(cfg.vx) || 0;
+    panState.vy = Number(cfg.vy) || 0;
+    panState.vw = Number(cfg.vw) || 0;
+    panState.vh = Number(cfg.vh) || 0;
+    panState.ww = Number(cfg.ww) || 0;
+    panState.wh = Number(cfg.wh) || 0;
+    panState.seed = Number(cfg.seed) || panState.seed;
+    panState.originMs = Number(cfg.originMs) || panState.originMs;
+    panState.screens = Array.isArray(cfg.screens) ? cfg.screens : parseScreensParam(cfg.screens);
+    if (opticalEngine && opticalEngine.setPanoramic) {
+      opticalEngine.setPanoramic(panState);
+    }
+    if (roamingEngine && roamingEngine.setPanoramic) {
+      roamingEngine.setPanoramic(panState);
+    }
+  };
+
+  window.__moveNowSyncWorldEpoch = function (seed, originMs) {
+    panState.seed = Number(seed) || panState.seed;
+    panState.originMs = Number(originMs) || panState.originMs;
+    if (opticalEngine && opticalEngine.setPanoramic) {
+      opticalEngine.setPanoramic(panState);
+    }
+    if (roamingEngine && roamingEngine.setPanoramic) {
+      roamingEngine.setPanoramic(panState);
+    }
+  };
 
   const surfaces = {
     pre_alert: document.getElementById('surfacePreAlert'),
@@ -38,17 +112,20 @@
   }
 
   // Lazy-mount full-bleed optical physics canvas (for nature_window & all Stage-2 sealed backdrops)
-  let opticalEngine = null;
   let opticalCanvasEl = null;
   let opticalRafId = null;
   let opticalActive = false;
+  let roamingActive = false;
   const fsNatureBreath = document.getElementById('fsNatureBreath');
 
   function ensureOpticalEngine(canvasId) {
     if (!opticalEngine && window.MoveNowNatureOptics) {
       opticalCanvasEl = document.getElementById(canvasId);
       if (opticalCanvasEl) {
-        opticalEngine = window.MoveNowNatureOptics.createCanvas(opticalCanvasEl, { compact: false, mode: 'bokeh' });
+        opticalEngine = window.MoveNowNatureOptics.createCanvas(opticalCanvasEl, { compact: false, mode: 'sunlight' });
+        if (opticalEngine.setPanoramic && panState.ww > 0) {
+          opticalEngine.setPanoramic(panState);
+        }
       }
     }
     return opticalEngine;
@@ -57,13 +134,13 @@
   function startOpticalLoop() {
     if (opticalRafId !== null) return;
     function step(now) {
-      if (!document.hidden) {
-        if (opticalActive && opticalEngine) {
-          opticalEngine.update(now);
-        }
-        if (currentPhase === 'sealed') {
-          updateSealedLiveScene(now);
-        }
+      if (opticalActive && opticalEngine) {
+        opticalEngine.update(now);
+      }
+      if (currentPhase === 'sealed') {
+        updateSealedLiveScene(now);
+      } else if (roamingActive && roamingEngine) {
+        roamingEngine.update(now);
       }
       if (!fsNatureBreath.hidden) {
         const cycle = (now / 1000) % 10;
@@ -99,10 +176,13 @@
   const sealedWakeHintEl = document.getElementById('sealedWakeHint');
   const guardianStageEl = document.getElementById('guardianStage');
 
-  let roamingEngine = null;
   function ensureRoamingEngine() {
     if (!roamingEngine && sealedRoamingCanvas && window.MoveNowRoamingStage) {
       roamingEngine = window.MoveNowRoamingStage.create(sealedRoamingCanvas);
+      if (roamingEngine.setPanoramic && panState.ww > 0) {
+        roamingEngine.setPanoramic(panState);
+      }
+      window.__moveNowRoamingEngine = roamingEngine;
     }
     return roamingEngine;
   }
@@ -141,9 +221,9 @@
 
     const t = nowMs / 1000;
 
-    // Foreground Depth Layer Orbs drifting IN FRONT OF Giant Glass Clock (Apple Depth Effect!)
+    // Foreground Depth Layer Orbs drifting IN FRONT OF Giant Glass Clock (Primary screen only!)
     if (frontCtx && sealedFrontCanvas) {
-      const activeDepth = currentSealedLayout === 'glass_clock';
+      const activeDepth = currentSealedLayout === 'glass_clock' && isPrimaryScreen;
       sealedFrontCanvas.classList.toggle('active', activeDepth);
       if (activeDepth) {
         const rect = sealedFrontCanvas.getBoundingClientRect();
@@ -167,9 +247,9 @@
           const orad = o.r * (w / 1280 + 0.35);
           const g = frontCtx.createRadialGradient(ox, oy, 4, ox, oy, orad);
           if (dark) {
-            g.addColorStop(0, o.warm ? 'rgba(232, 174, 142, 0.18)' : 'rgba(255, 255, 255, 0.14)');
+            g.addColorStop(0, o.warm ? 'rgba(232, 174, 142, 0.09)' : 'rgba(255, 255, 255, 0.07)');
           } else {
-            g.addColorStop(0, o.warm ? 'rgba(244, 232, 218, 0.44)' : 'rgba(248, 245, 238, 0.48)');
+            g.addColorStop(0, o.warm ? 'rgba(246, 238, 228, 0.22)' : 'rgba(250, 248, 244, 0.24)');
           }
           g.addColorStop(1, 'rgba(255, 255, 255, 0)');
           frontCtx.fillStyle = g;
@@ -287,20 +367,38 @@
     return (action && action.message) || '松肩，深呼吸。';
   }
 
+  function resolveActionPose(action, snapshot, ratio) {
+    if (
+      action &&
+      action.followupPose &&
+      snapshot.breakDurationSec >= 25 &&
+      ratio <= 0.48
+    ) {
+      return action.followupPose;
+    }
+    return (action && action.pose) || 'calm';
+  }
+
   function syncFullBleedOptics(canvasId, snapshot) {
     const isSealed = snapshot.phase === 'sealed';
     const isNature = snapshot.settings.theme === 'nature_window';
-    const needOptics = isSealed || isNature;
+    const secResting = !isPrimaryScreen && snapshot.phase === 'resting';
+    const needOptics = isSealed || isNature || secResting;
 
     const eng = needOptics ? ensureOpticalEngine(canvasId) : opticalEngine;
     if (needOptics && eng && opticalCanvasEl) {
       opticalActive = true;
       opticalCanvasEl.classList.add('active');
-      const mode = isSealed
-        ? (snapshot.sealedStyle || 'warm_matte')
-        : (snapshot.activeNatureStyle || 'bokeh');
+      let mode;
+      if (isNature) {
+        mode = isSealed ? (snapshot.sealedStyle || snapshot.activeNatureStyle || 'sunlight') : (snapshot.activeNatureStyle || 'sunlight');
+      } else if (snapshot.settings.theme === 'sketch') {
+        mode = 'vellum';
+      } else {
+        mode = 'warm_matte';
+      }
       eng.setMode(mode, {
-        deepSeal: isSealed,
+        deepSeal: isSealed || secResting,
         easterEgg: snapshot.activeAction ? snapshot.activeAction.easterEgg : null,
         mood: snapshot.mood
       });
@@ -343,6 +441,7 @@
       ? Math.max(0, Math.min(1, snapshot.breakRemainingSec / snapshot.breakDurationSec))
       : 0;
     const activeCopy = resolveActionText(action, snapshot, ratio);
+    const activePose = resolveActionPose(action, snapshot, ratio);
 
     if (active === 'fullscreen') {
       const isSealed = snapshot.phase === 'sealed';
@@ -357,8 +456,8 @@
           currentSealedLayout = 'glass_clock';
         } else if (currentTheme === 'sketch') {
           currentSealedLayout = 'sketch_paper';
-        } else if (sealedStyle === 'bokeh') {
-          currentSealedLayout = 'solar_orbit';
+        } else if (sealedStyle === 'sunlight' || sealedStyle === 'bokeh') {
+          currentSealedLayout = 'sunlit_window';
         } else {
           currentSealedLayout = 'editorial_wave';
         }
@@ -369,7 +468,7 @@
           sealedSketchLineEl.hidden = true;
         }
         if (sealedDividerEl) {
-          sealedDividerEl.hidden = currentSealedLayout !== 'editorial_wave';
+          sealedDividerEl.hidden = !(currentSealedLayout === 'editorial_wave' || currentSealedLayout === 'sunlit_window');
         }
         if (sealedClockEl) {
           sealedClockEl.textContent = getClockHHMM();
@@ -393,11 +492,13 @@
         if (currentTheme === 'geometric' || currentTheme === 'sketch') {
           const rEng = ensureRoamingEngine();
           if (rEng && sealedRoamingCanvas) {
+            roamingActive = true;
             sealedRoamingCanvas.classList.add('active');
-            rEng.setActive(true, currentTheme);
+            rEng.setActive(true, currentTheme, { ambientOnly: false });
             rEng.setTheme(currentTheme);
           }
         } else {
+          roamingActive = false;
           if (sealedRoamingCanvas) sealedRoamingCanvas.classList.remove('active');
           if (roamingEngine) roamingEngine.setActive(false);
         }
@@ -410,13 +511,40 @@
       if (sealedFrontCanvas) {
         sealedFrontCanvas.classList.remove('active');
       }
+      currentDisplayedSealedMessage = '';
+
+      if (!isPrimaryScreen) {
+        fsStageEl.hidden = true;
+        fsNatureBreath.hidden = true;
+        fsSnoozeBtn.hidden = true;
+        if (currentTheme === 'geometric' || currentTheme === 'sketch') {
+          const rEng = ensureRoamingEngine();
+          if (rEng && sealedRoamingCanvas) {
+            roamingActive = true;
+            sealedRoamingCanvas.classList.add('active');
+            rEng.setActive(true, currentTheme, { ambientOnly: true });
+            rEng.setTheme(currentTheme);
+            startOpticalLoop();
+          }
+        } else {
+          roamingActive = false;
+          if (sealedRoamingCanvas) sealedRoamingCanvas.classList.remove('active');
+          if (roamingEngine) roamingEngine.setActive(false);
+        }
+        fsEscapeNote.classList.remove('highlighted', 'hands-off');
+        fsEscapeNote.textContent = snapshot.settings.exitStrictness === 'strict' && !snapshot.isPreview
+          ? '抬头远眺深呼吸'
+          : '抬头远眺深呼吸 · 按 ESC 可跳过';
+        return;
+      }
+
+      roamingActive = false;
       if (sealedRoamingCanvas) {
         sealedRoamingCanvas.classList.remove('active');
       }
       if (roamingEngine) {
         roamingEngine.setActive(false);
       }
-      currentDisplayedSealedMessage = '';
 
       if (isNature) {
         fsStageEl.hidden = true;
@@ -427,7 +555,8 @@
         ensureFsStage().setState({
           theme: currentTheme,
           natureStyle: snapshot.activeNatureStyle,
-          pose: action.pose,
+          actionId: action.actionId || '',
+          pose: activePose,
           mood: 'calm',
           easterEgg: action.easterEgg
         });
@@ -473,7 +602,8 @@
       ensureCornerStage().setState({
         theme: currentTheme,
         natureStyle: snapshot.activeNatureStyle,
-        pose: action.pose,
+        actionId: action.actionId || '',
+        pose: activePose,
         mood: 'calm',
         easterEgg: action.easterEgg
       });
